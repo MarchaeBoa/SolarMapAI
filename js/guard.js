@@ -5,7 +5,7 @@
 (async function guardRoute() {
   const page = window.location.pathname.split('/').pop() || 'index.html';
   const authPages = ['login.html', 'register.html', 'forgot-password.html'];
-  const dashPages = ['dashboard.html', 'dashboard-simulador.html', 'dashboard-orcamentos.html', 'dashboard-projetos.html', 'dashboard-perfil.html'];
+  const dashPages = ['dashboard.html', 'dashboard-simulador.html', 'dashboard-orcamentos.html', 'dashboard-projetos.html', 'dashboard-perfil.html', 'dashboard-admin.html'];
 
   const isAuthPage = authPages.includes(page);
   const isDashPage = dashPages.includes(page);
@@ -36,10 +36,12 @@
         const name = profile?.full_name || user.email.split('@')[0];
         nameEl.textContent = name;
         if (avatarEl) avatarEl.textContent = name.charAt(0).toUpperCase();
-        // Show admin link if user is admin
+        // Show admin links if user is admin
         if (profile?.role === 'admin') {
           const adminLink = document.getElementById('adminLink');
           if (adminLink) adminLink.style.display = 'flex';
+          const adminBtn = document.getElementById('adminBtnSidebar');
+          if (adminBtn) adminBtn.style.display = 'block';
         }
       }
       if (emailEl) emailEl.textContent = user.email;
