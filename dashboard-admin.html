@@ -306,8 +306,14 @@ function renderUsersTable(users){
     const status=u.status||'active';
     const statusBadge=status==='active'?'<span class="badge badge-active">ATIVO</span>':'<span class="badge badge-inactive">INATIVO</span>';
     const proUntil=u.pro_until?formatDate(u.pro_until):'—';
-    const planSel=u.role==='admin'?'':`<select class="plan-select" onchange="changeUserPlanUI('${u.id}',this.value)"><option value="free" ${plan==='free'?'selected':''}>Free</option><option value="pro" ${plan==='pro'?'selected':''}>Pro</option><option value="premium" ${plan==='premium'?'selected':''}>Premium</option></select>`;
-    const actions=u.role==='admin'?'<span class="admin-role-label">Administrador</span>':`<div class="admin-actions">${planSel}<button class="admin-btn enter-account" onclick="openUserModal('${u.id}')">&#8614; Entrar na conta</button>${status==='active'?`<button class="admin-btn danger" onclick="deactivateUserUI('${u.id}')">&#9888; Desativar</button>`:`<button class="admin-btn promote" onclick="activateUserUI('${u.id}')">&#10003; Ativar</button>`}</div>`;
+    const promoteBtn=plan==='pro'||plan==='premium'
+      ?`<button class="admin-btn danger" onclick="demoteUserUI('${u.id}')">&#8595; Rebaixar</button>`
+      :`<button class="admin-btn promote" onclick="promoteUserUI('${u.id}')">+ Promover</button>`;
+    const toggleBtn=status==='active'
+      ?`<button class="admin-btn danger" onclick="deactivateUserUI('${u.id}')">&#9888; Desativar</button>`
+      :`<button class="admin-btn promote" onclick="activateUserUI('${u.id}')">&#10003; Ativar</button>`;
+    const actions=u.role==='admin'?'<span class="admin-role-label">Administrador</span>'
+      :`<div class="admin-actions">${promoteBtn}<button class="admin-btn" onclick="viewUserProjects('${u.id}')">&#128193; Projetos</button><button class="admin-btn enter-account" onclick="openUserModal('${u.id}')">&#8614; Entrar na conta</button>${toggleBtn}</div>`;
     return `<tr><td style="font-weight:600">${u.full_name||'Sem nome'}</td><td style="color:var(--muted)">${u.email||'—'}</td><td>${planBadge}</td><td style="color:var(--muted)">${proUntil}</td><td>${statusBadge}</td><td style="color:var(--muted)">${formatDate(u.created_at)}</td><td>${actions}</td></tr>`;
   }).join('');
 }
@@ -370,6 +376,9 @@ async function changeBudgetStatusUI(id,st){try{await updateAdminBudgetStatus(id,
 async function deleteProjectUI(id){if(!confirm('Excluir este projeto?'))return;try{await deleteAdminProject(id);await loadAdminData()}catch(e){alert('Erro: '+e.message)}}
 async function deactivateUserUI(uid){const n=allUsers.find(u=>u.id===uid)?.full_name||'usuario';if(!confirm(`Desativar conta de ${n}?`))return;try{await deactivateUser(uid);await loadAdminData()}catch(e){alert('Erro: '+e.message)}}
 async function activateUserUI(uid){const n=allUsers.find(u=>u.id===uid)?.full_name||'usuario';if(!confirm(`Reativar conta de ${n}?`))return;try{await activateUser(uid);await loadAdminData()}catch(e){alert('Erro: '+e.message)}}
+async function promoteUserUI(uid){const n=allUsers.find(u=>u.id===uid)?.full_name||'usuario';if(!confirm(`Promover ${n} para plano PRO por 1 ano?`))return;try{await promoteUser(uid,'pro');await loadAdminData()}catch(e){alert('Erro: '+e.message)}}
+async function demoteUserUI(uid){const n=allUsers.find(u=>u.id===uid)?.full_name||'usuario';if(!confirm(`Rebaixar ${n} para plano gratuito?`))return;try{await demoteUser(uid);await loadAdminData()}catch(e){alert('Erro: '+e.message)}}
+function viewUserProjects(uid){const up=allProjects.filter(p=>p.user_id===uid);const n=allUsers.find(u=>u.id===uid)?.full_name||'Usuario';if(!up.length){alert(`${n} nao possui projetos.`);return}switchTab('projetos');renderProjectsTable(up);document.getElementById('projectCount').textContent=up.length+' projeto(s) de '+n}
 
 /* ═══ MODAL: ENTRAR NA CONTA ═══ */
 async function openUserModal(uid){
