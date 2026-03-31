@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orçamentos — SolarMap AI</title>
+<link rel="stylesheet" href="css/shared.css">
+<link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+
+<!-- Cosmic Background -->
+<div class="cosmic-bg"></div>
+<div class="cosmic-stars"></div>
+<div class="energy-orbs" id="energyOrbs"></div>
+
+<!-- Mobile Toggle -->
+<button class="dash-mobile-toggle" onclick="toggleDashSidebar()">☰</button>
+
+<!-- Sidebar -->
+<div class="dash-layout">
+  <aside class="dash-sidebar">
+    <a href="dashboard.html" class="dash-sidebar-logo">
+      <div class="dash-sidebar-logo-icon">☀</div>
+      <div class="dash-sidebar-logo-text">Solar<span>Map</span> AI</div>
+    </a>
+
+    <nav class="dash-nav">
+      <div class="dash-nav-section">Principal</div>
+      <a href="dashboard.html" class="dash-nav-item">
+        <span class="dash-nav-icon">📊</span> Painel Geral
+      </a>
+      <a href="dashboard-simulador.html" class="dash-nav-item">
+        <span class="dash-nav-icon">☀️</span> Simulador
+      </a>
+
+      <div class="dash-nav-section">Gestão</div>
+      <a href="dashboard-projetos.html" class="dash-nav-item">
+        <span class="dash-nav-icon">📁</span> Projetos
+      </a>
+      <a href="dashboard-orcamentos.html" class="dash-nav-item active">
+        <span class="dash-nav-icon">💰</span> Orçamentos
+      </a>
+
+      <div class="dash-nav-section">Conta</div>
+      <a href="dashboard-perfil.html" class="dash-nav-item">
+        <span class="dash-nav-icon">👤</span> Meu Perfil
+      </a>
+    </nav>
+
+    <div class="dash-sidebar-footer">
+      <div class="dash-user-info" onclick="window.location.href='dashboard-perfil.html'">
+        <div class="dash-user-avatar" id="dashUserAvatar">U</div>
+        <div>
+          <div class="dash-user-name" id="dashUserName">Carregando...</div>
+          <div class="dash-user-email" id="dashUserEmail"></div>
+        </div>
+      </div>
+      <button class="dash-logout" onclick="authSignOut()">
+        <span>🚪</span> Sair da conta
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dash-main">
+    <div class="dash-header">
+      <div class="dash-header-left">
+        <h1>Orçamentos</h1>
+        <p>Gerencie seus orçamentos de projetos solares</p>
+      </div>
+      <button class="btn-primary" onclick="openBudgetModal()">+ Novo orçamento</button>
+    </div>
+
+    <!-- Budgets Table -->
+    <div class="dash-table-wrap">
+      <div id="budgetsContent">
+        <div class="dash-empty">
+          <div class="dash-empty-icon">💰</div>
+          <h3>Nenhum orçamento ainda</h3>
+          <p>Crie seu primeiro orçamento para um cliente.</p>
+          <button class="btn-primary" onclick="openBudgetModal()">Criar orçamento</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Budget Modal -->
+<div class="modal-overlay" id="budgetModal" style="display:none">
+  <div class="glass-card" style="max-width:560px;width:90%;max-height:90vh;overflow-y:auto;margin:auto;position:relative;">
+    <button class="modal-close" onclick="closeBudgetModal()">&times;</button>
+    <h2 style="margin-bottom:24px;" id="budgetModalTitle">Novo Orçamento</h2>
+
+    <input type="hidden" id="bdgEditId">
+
+    <div class="form-group">
+      <label class="form-label">Nome do cliente</label>
+      <input type="text" class="form-input" id="bdgClientName" placeholder="Ex: João Silva">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Email do cliente</label>
+      <input type="email" class="form-input" id="bdgClientEmail" placeholder="email@exemplo.com">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Projeto vinculado</label>
+      <select class="form-input" id="bdgProjectId">
+        <option value="">— Nenhum projeto —</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Valor total (R$)</label>
+      <input type="number" class="form-input" id="bdgTotalValue" placeholder="0.00" step="0.01" min="0">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Itens / Descrição</label>
+      <textarea class="form-input" id="bdgItems" rows="4" placeholder='Ex: 10x Painéis 550W, 1x Inversor 5kW, Instalação...'></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Status</label>
+      <select class="form-input" id="bdgStatus">
+        <option value="pendente">Pendente</option>
+        <option value="enviado">Enviado</option>
+        <option value="aprovado">Aprovado</option>
+        <option value="recusado">Recusado</option>
+      </select>
+    </div>
+
+    <div id="bdgAlert" style="margin-bottom:16px;display:none;padding:12px;border-radius:12px;font-size:0.85rem;"></div>
+
+    <button class="btn-primary" style="width:100%" onclick="saveBudget()">Salvar orçamento</button>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/guard.js"></script>
+<script>
+// Generate orbs
+generateOrbs(150);
+
+// Highlight active nav
+const currentPage = window.location.pathname.split('/').pop();
+document.querySelectorAll('.dash-nav-item').forEach(item => {
+  item.classList.toggle('active', item.getAttribute('href') === currentPage);
+});
+
+// ── Load Budgets ──
+async function loadBudgets() {
+  try {
+    const budgets = await getBudgets();
+    const container = document.getElementById('budgetsContent');
+
+    if (!budgets.length) {
+      container.innerHTML = `
+        <div class="dash-empty">
+          <div class="dash-empty-icon">💰</div>
+          <h3>Nenhum orçamento ainda</h3>
+          <p>Crie seu primeiro orçamento para um cliente.</p>
+          <button class="btn-primary" onclick="openBudgetModal()">Criar orçamento</button>
+        </div>`;
+      return;
+    }
+
+    const statusMap = {
+      pendente: 'badge-gold',
+      enviado: 'badge-blue',
+      aprovado: 'badge-green',
+      recusado: 'badge-red'
+    };
+
+    container.innerHTML = `
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th>Cliente</th>
+            <th>Email</th>
+            <th>Projeto Vinculado</th>
+            <th>Valor Total</th>
+            <th>Status</th>
+            <th>Data</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${budgets.map(b => `
+            <tr>
+              <td><strong>${b.client_name || '—'}</strong></td>
+              <td>${b.client_email || '—'}</td>
+              <td>${b.projects?.name || '—'}</td>
+              <td style="color:var(--green)">${formatCurrency(b.total_value || 0)}</td>
+              <td><span class="badge ${statusMap[b.status] || 'badge-muted'}">${b.status}</span></td>
+              <td style="color:var(--muted)">${formatDate(b.created_at)}</td>
+              <td>
+                <button class="btn-ghost" style="padding:4px 10px;font-size:0.75rem;margin-right:4px;" onclick="editBdg('${b.id}')">✏️ Editar</button>
+                <button class="btn-ghost" style="padding:4px 10px;font-size:0.75rem;color:#ff6b6b;" onclick="deleteBdg('${b.id}')">🗑️</button>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`;
+  } catch (e) {
+    console.error('Erro ao carregar orçamentos:', e.message);
+  }
+}
+
+// ── Open Modal ──
+async function openBudgetModal(budget) {
+  document.getElementById('budgetModal').style.display = 'flex';
+  document.getElementById('bdgAlert').style.display = 'none';
+
+  // Load projects into select
+  try {
+    const projects = await getProjects();
+    const sel = document.getElementById('bdgProjectId');
+    sel.innerHTML = '<option value="">— Nenhum projeto —</option>';
+    projects.forEach(p => {
+      sel.innerHTML += `<option value="${p.id}">${p.name}</option>`;
+    });
+  } catch (e) {
+    console.log('Erro ao carregar projetos:', e.message);
+  }
+
+  if (budget) {
+    document.getElementById('budgetModalTitle').textContent = 'Editar Orçamento';
+    document.getElementById('bdgEditId').value = budget.id;
+    document.getElementById('bdgClientName').value = budget.client_name || '';
+    document.getElementById('bdgClientEmail').value = budget.client_email || '';
+    document.getElementById('bdgProjectId').value = budget.project_id || '';
+    document.getElementById('bdgTotalValue').value = budget.total_value || '';
+    document.getElementById('bdgItems').value = budget.items || '';
+    document.getElementById('bdgStatus').value = budget.status || 'pendente';
+  } else {
+    document.getElementById('budgetModalTitle').textContent = 'Novo Orçamento';
+    document.getElementById('bdgEditId').value = '';
+    document.getElementById('bdgClientName').value = '';
+    document.getElementById('bdgClientEmail').value = '';
+    document.getElementById('bdgProjectId').value = '';
+    document.getElementById('bdgTotalValue').value = '';
+    document.getElementById('bdgItems').value = '';
+    document.getElementById('bdgStatus').value = 'pendente';
+  }
+}
+
+function closeBudgetModal() {
+  document.getElementById('budgetModal').style.display = 'none';
+}
+
+// Close modal on overlay click
+document.getElementById('budgetModal').addEventListener('click', function(e) {
+  if (e.target === this) closeBudgetModal();
+});
+
+// ── Save Budget ──
+async function saveBudget() {
+  const alert = document.getElementById('bdgAlert');
+  const clientName = document.getElementById('bdgClientName').value.trim();
+  const clientEmail = document.getElementById('bdgClientEmail').value.trim();
+  const projectId = document.getElementById('bdgProjectId').value;
+  const totalValue = parseFloat(document.getElementById('bdgTotalValue').value) || 0;
+  const items = document.getElementById('bdgItems').value.trim();
+  const status = document.getElementById('bdgStatus').value;
+  const editId = document.getElementById('bdgEditId').value;
+
+  if (!clientName) {
+    alert.style.display = 'block';
+    alert.style.background = 'rgba(255,107,107,0.15)';
+    alert.style.color = '#ff6b6b';
+    alert.textContent = 'Informe o nome do cliente.';
+    return;
+  }
+
+  try {
+    if (editId) {
+      await updateBudget(editId, {
+        client_name: clientName,
+        client_email: clientEmail,
+        project_id: projectId || null,
+        total_value: totalValue,
+        items: items,
+        status: status
+      });
+    } else {
+      await createBudget({
+        clientName,
+        clientEmail,
+        projectId: projectId || null,
+        totalValue,
+        items,
+        status
+      });
+    }
+
+    closeBudgetModal();
+    loadBudgets();
+  } catch (e) {
+    alert.style.display = 'block';
+    alert.style.background = 'rgba(255,107,107,0.15)';
+    alert.style.color = '#ff6b6b';
+    alert.textContent = 'Erro: ' + e.message;
+  }
+}
+
+// ── Edit Budget ──
+async function editBdg(id) {
+  try {
+    const budgets = await getBudgets();
+    const budget = budgets.find(b => b.id === id);
+    if (budget) openBudgetModal(budget);
+  } catch (e) {
+    console.error('Erro ao editar:', e.message);
+  }
+}
+
+// ── Delete Budget ──
+async function deleteBdg(id) {
+  if (!confirm('Deseja realmente excluir este orçamento?')) return;
+  try {
+    await deleteBudget(id);
+    loadBudgets();
+  } catch (e) {
+    console.error('Erro ao excluir:', e.message);
+  }
+}
+
+// Init
+loadBudgets();
+</script>
+</body>
+</html>

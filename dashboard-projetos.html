@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Projetos — SolarMap AI</title>
+<link rel="stylesheet" href="css/shared.css">
+<link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+
+<!-- Cosmic Background -->
+<div class="cosmic-bg"></div>
+<div class="cosmic-stars"></div>
+<div class="energy-orbs" id="energyOrbs"></div>
+
+<!-- Mobile Toggle -->
+<button class="dash-mobile-toggle" onclick="toggleDashSidebar()">☰</button>
+
+<!-- Sidebar -->
+<div class="dash-layout">
+  <aside class="dash-sidebar">
+    <a href="dashboard.html" class="dash-sidebar-logo">
+      <div class="dash-sidebar-logo-icon">☀</div>
+      <div class="dash-sidebar-logo-text">Solar<span>Map</span> AI</div>
+    </a>
+
+    <nav class="dash-nav">
+      <div class="dash-nav-section">Principal</div>
+      <a href="dashboard.html" class="dash-nav-item">
+        <span class="dash-nav-icon">📊</span> Painel Geral
+      </a>
+      <a href="dashboard-simulador.html" class="dash-nav-item">
+        <span class="dash-nav-icon">☀️</span> Simulador
+      </a>
+
+      <div class="dash-nav-section">Gestão</div>
+      <a href="dashboard-projetos.html" class="dash-nav-item active">
+        <span class="dash-nav-icon">📁</span> Projetos
+      </a>
+      <a href="dashboard-orcamentos.html" class="dash-nav-item">
+        <span class="dash-nav-icon">💰</span> Orçamentos
+      </a>
+
+      <div class="dash-nav-section">Conta</div>
+      <a href="dashboard-perfil.html" class="dash-nav-item">
+        <span class="dash-nav-icon">👤</span> Meu Perfil
+      </a>
+    </nav>
+
+    <div class="dash-sidebar-footer">
+      <div class="dash-user-info" onclick="window.location.href='dashboard-perfil.html'">
+        <div class="dash-user-avatar" id="dashUserAvatar">U</div>
+        <div>
+          <div class="dash-user-name" id="dashUserName">Carregando...</div>
+          <div class="dash-user-email" id="dashUserEmail"></div>
+        </div>
+      </div>
+      <button class="dash-logout" onclick="authSignOut()">
+        <span>🚪</span> Sair da conta
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dash-main">
+    <div class="dash-header">
+      <div class="dash-header-left">
+        <h1>Meus Projetos</h1>
+        <p>Gerencie todos os seus projetos solares</p>
+      </div>
+      <button class="btn-primary" onclick="openProjectModal()">+ Novo projeto</button>
+    </div>
+
+    <!-- Projects Grid -->
+    <div id="projectsList">
+      <div class="dash-empty">
+        <div class="dash-empty-icon">📁</div>
+        <h3>Nenhum projeto ainda</h3>
+        <p>Crie seu primeiro projeto solar para começar a organizar suas instalações.</p>
+        <button class="btn-primary" onclick="openProjectModal()">Criar projeto</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Project Modal -->
+<div class="dash-modal" id="projectModal">
+  <div class="glass-card" style="max-width:640px;width:90%;max-height:90vh;overflow-y:auto;padding:32px;">
+    <h2 id="modalTitle" style="margin-bottom:24px;">Novo Projeto</h2>
+    <input type="hidden" id="projectId">
+
+    <div style="display:grid;gap:16px;">
+      <div>
+        <label style="display:block;margin-bottom:6px;color:var(--muted);font-size:0.85rem;">Nome do Projeto *</label>
+        <input type="text" id="projName" class="dash-input" placeholder="Ex: Residência Silva" required>
+      </div>
+
+      <div>
+        <label style="display:block;margin-bottom:6px;color:var(--muted);font-size:0.85rem;">Endereço</label>
+        <input type="text" id="projAddress" class="dash-input" placeholder="Rua, número, cidade">
+      </div>
+
+      <div>
+        <label style="display:block;margin-bottom:6px;color:var(--muted);font-size:0.85rem;">Status</label>
+        <select id="projStatus" class="dash-input">
+          <option value="rascunho">Rascunho</option>
+          <option value="em análise">Em Análise</option>
+          <option value="aprovado">Aprovado</option>
+          <option value="instalando">Instalando</option>
+          <option value="concluído">Concluído</option>
+        </select>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div>
+          <label style="display:block;margin-bottom:6px;color:var(--muted);font-size:0.85rem;">Área do Telhado (m²)</label>
+          <input type="number" id="projRoofArea" class="dash-input" placeholder="0" step="0.1">
+        </div>
+        <div>
+          <label style="display:block;margin-bottom:6px;color:var(--muted);font-size:0.85rem;">Painéis</label>
+          <input type="number" id="projPanels" class="dash-input" placeholder="0">
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div>
+          <label style="display:block;margin-bottom:6px;color:var(--muted);font-size:0.85rem;">Potência (kWp)</label>
+          <input type="number" id="projPowerKwp" class="dash-input" placeholder="0" step="0.01">
+        </div>
+        <div>
+          <label style="display:block;margin-bottom:6px;color:var(--muted);font-size:0.85rem;">Geração Mensal (kWh)</label>
+          <input type="number" id="projMonthlyKwh" class="dash-input" placeholder="0" step="0.1">
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div>
+          <label style="display:block;margin-bottom:6px;color:var(--muted);font-size:0.85rem;">Investimento (R$)</label>
+          <input type="number" id="projInvestment" class="dash-input" placeholder="0.00" step="0.01">
+        </div>
+        <div>
+          <label style="display:block;margin-bottom:6px;color:var(--muted);font-size:0.85rem;">Payback (anos)</label>
+          <input type="number" id="projPayback" class="dash-input" placeholder="0" step="0.1">
+        </div>
+      </div>
+
+      <div>
+        <label style="display:block;margin-bottom:6px;color:var(--muted);font-size:0.85rem;">Painel Selecionado</label>
+        <input type="text" id="projPanel" class="dash-input" placeholder="Ex: Canadian Solar 550W">
+      </div>
+
+      <div>
+        <label style="display:block;margin-bottom:6px;color:var(--muted);font-size:0.85rem;">Inversor Selecionado</label>
+        <input type="text" id="projInverter" class="dash-input" placeholder="Ex: Growatt 5kW">
+      </div>
+
+      <div>
+        <label style="display:block;margin-bottom:6px;color:var(--muted);font-size:0.85rem;">Observações</label>
+        <textarea id="projNotes" class="dash-input" rows="3" placeholder="Anotações sobre o projeto..."></textarea>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:24px;">
+      <button class="btn-ghost" onclick="closeProjectModal()">Cancelar</button>
+      <button class="btn-primary" onclick="saveProject()">Salvar Projeto</button>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/guard.js"></script>
+<script>
+// Generate orbs
+generateOrbs(150);
+
+// Status badge map
+const statusBadge = {
+  'rascunho': 'badge-muted',
+  'em análise': 'badge-gold',
+  'aprovado': 'badge-green',
+  'instalando': 'badge-blue',
+  'concluído': 'badge-green'
+};
+
+// Load projects
+async function loadProjects() {
+  try {
+    const projects = await getProjects();
+    const container = document.getElementById('projectsList');
+
+    if (projects.length === 0) {
+      container.innerHTML = `
+        <div class="dash-empty">
+          <div class="dash-empty-icon">📁</div>
+          <h3>Nenhum projeto ainda</h3>
+          <p>Crie seu primeiro projeto solar para começar a organizar suas instalações.</p>
+          <button class="btn-primary" onclick="openProjectModal()">Criar projeto</button>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:20px;">
+        ${projects.map(p => `
+          <div class="glass-card" style="padding:24px;display:flex;flex-direction:column;gap:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+              <div>
+                <h3 style="margin:0 0 4px 0;font-size:1.1rem;">${p.name}</h3>
+                ${p.address ? `<p style="margin:0;color:var(--muted);font-size:0.85rem;">📍 ${p.address}</p>` : ''}
+              </div>
+              <span class="badge ${statusBadge[p.status] || 'badge-muted'}">${p.status}</span>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.85rem;">
+              ${p.panels ? `<div><span style="color:var(--muted);">Painéis:</span> <strong>${p.panels}</strong></div>` : ''}
+              ${p.power_kwp ? `<div><span style="color:var(--muted);">Potência:</span> <strong>${p.power_kwp} kWp</strong></div>` : ''}
+              ${p.monthly_kwh ? `<div><span style="color:var(--muted);">Geração:</span> <strong>${p.monthly_kwh} kWh/mês</strong></div>` : ''}
+              ${p.roof_area ? `<div><span style="color:var(--muted);">Área:</span> <strong>${p.roof_area} m²</strong></div>` : ''}
+            </div>
+
+            ${p.investment ? `
+              <div style="padding:10px 14px;background:rgba(255,255,255,0.04);border-radius:10px;font-size:0.9rem;">
+                <span style="color:var(--muted);">Investimento:</span>
+                <strong style="color:var(--gold);margin-left:6px;">${formatCurrency(p.investment)}</strong>
+                ${p.payback_years ? `<span style="color:var(--muted);margin-left:12px;">Payback: ${p.payback_years} anos</span>` : ''}
+              </div>` : ''}
+
+            ${p.equipment_panel || p.equipment_inverter ? `
+              <div style="font-size:0.8rem;color:var(--muted);">
+                ${p.equipment_panel ? `<div>🔆 ${p.equipment_panel}</div>` : ''}
+                ${p.equipment_inverter ? `<div>⚡ ${p.equipment_inverter}</div>` : ''}
+              </div>` : ''}
+
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);">
+              <span style="font-size:0.75rem;color:var(--muted);">Criado em ${formatDate(p.created_at)}${p.updated_at ? ' · Atualizado ' + formatDate(p.updated_at) : ''}</span>
+              <div style="display:flex;gap:8px;">
+                <button class="btn-ghost" style="padding:6px 14px;font-size:0.8rem;" onclick="openProjectModal(${JSON.stringify(p).replace(/"/g,'&quot;')})">Editar</button>
+                <button class="btn-ghost" style="padding:6px 14px;font-size:0.8rem;color:#ff6b6b;" onclick="deleteProj('${p.id}')">Excluir</button>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>`;
+  } catch (e) {
+    console.error('Erro ao carregar projetos:', e.message);
+  }
+}
+
+// Open modal (create or edit)
+function openProjectModal(project = null) {
+  const modal = document.getElementById('projectModal');
+  const title = document.getElementById('modalTitle');
+
+  if (project) {
+    title.textContent = 'Editar Projeto';
+    document.getElementById('projectId').value = project.id;
+    document.getElementById('projName').value = project.name || '';
+    document.getElementById('projAddress').value = project.address || '';
+    document.getElementById('projStatus').value = project.status || 'rascunho';
+    document.getElementById('projRoofArea').value = project.roof_area || '';
+    document.getElementById('projPanels').value = project.panels || '';
+    document.getElementById('projPowerKwp').value = project.power_kwp || '';
+    document.getElementById('projMonthlyKwh').value = project.monthly_kwh || '';
+    document.getElementById('projInvestment').value = project.investment || '';
+    document.getElementById('projPayback').value = project.payback_years || '';
+    document.getElementById('projPanel').value = project.equipment_panel || '';
+    document.getElementById('projInverter').value = project.equipment_inverter || '';
+    document.getElementById('projNotes').value = project.notes || '';
+  } else {
+    title.textContent = 'Novo Projeto';
+    document.getElementById('projectId').value = '';
+    document.getElementById('projName').value = '';
+    document.getElementById('projAddress').value = '';
+    document.getElementById('projStatus').value = 'rascunho';
+    document.getElementById('projRoofArea').value = '';
+    document.getElementById('projPanels').value = '';
+    document.getElementById('projPowerKwp').value = '';
+    document.getElementById('projMonthlyKwh').value = '';
+    document.getElementById('projInvestment').value = '';
+    document.getElementById('projPayback').value = '';
+    document.getElementById('projPanel').value = '';
+    document.getElementById('projInverter').value = '';
+    document.getElementById('projNotes').value = '';
+  }
+
+  modal.style.display = 'flex';
+}
+
+function closeProjectModal() {
+  document.getElementById('projectModal').style.display = 'none';
+}
+
+// Save project (create or update)
+async function saveProject() {
+  const name = document.getElementById('projName').value.trim();
+  if (!name) { alert('Informe o nome do projeto.'); return; }
+
+  const data = {
+    name,
+    address: document.getElementById('projAddress').value.trim(),
+    status: document.getElementById('projStatus').value,
+    roofArea: parseFloat(document.getElementById('projRoofArea').value) || null,
+    panels: parseInt(document.getElementById('projPanels').value) || null,
+    powerKwp: parseFloat(document.getElementById('projPowerKwp').value) || null,
+    monthlyKwh: parseFloat(document.getElementById('projMonthlyKwh').value) || null,
+    investment: parseFloat(document.getElementById('projInvestment').value) || null,
+    paybackYears: parseFloat(document.getElementById('projPayback').value) || null,
+    equipmentPanel: document.getElementById('projPanel').value.trim(),
+    equipmentInverter: document.getElementById('projInverter').value.trim(),
+    notes: document.getElementById('projNotes').value.trim()
+  };
+
+  const editId = document.getElementById('projectId').value;
+
+  try {
+    if (editId) {
+      await updateProject(editId, {
+        name: data.name,
+        address: data.address,
+        status: data.status,
+        roof_area: data.roofArea,
+        panels: data.panels,
+        power_kwp: data.powerKwp,
+        monthly_kwh: data.monthlyKwh,
+        investment: data.investment,
+        payback_years: data.paybackYears,
+        equipment_panel: data.equipmentPanel,
+        equipment_inverter: data.equipmentInverter,
+        notes: data.notes
+      });
+    } else {
+      await createProject(data);
+    }
+    closeProjectModal();
+    await loadProjects();
+  } catch (e) {
+    alert('Erro ao salvar projeto: ' + e.message);
+  }
+}
+
+// Delete project
+async function deleteProj(id) {
+  if (!confirm('Tem certeza que deseja excluir este projeto? Esta ação não pode ser desfeita.')) return;
+  try {
+    await deleteProject(id);
+    await loadProjects();
+  } catch (e) {
+    alert('Erro ao excluir projeto: ' + e.message);
+  }
+}
+
+// Close modal on backdrop click
+document.getElementById('projectModal').addEventListener('click', function(e) {
+  if (e.target === this) closeProjectModal();
+});
+
+// Load on init
+loadProjects();
+
+// Highlight active nav
+const currentPage = window.location.pathname.split('/').pop();
+document.querySelectorAll('.dash-nav-item').forEach(item => {
+  item.classList.toggle('active', item.getAttribute('href') === currentPage);
+});
+</script>
+</body>
+</html>

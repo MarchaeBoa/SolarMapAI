@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meu Perfil — SolarMap AI</title>
+<link rel="stylesheet" href="css/shared.css">
+<link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+
+<!-- Cosmic Background -->
+<div class="cosmic-bg"></div>
+<div class="cosmic-stars"></div>
+<div class="energy-orbs" id="energyOrbs"></div>
+
+<!-- Mobile Toggle -->
+<button class="dash-mobile-toggle" onclick="toggleDashSidebar()">☰</button>
+
+<!-- Sidebar -->
+<div class="dash-layout">
+  <aside class="dash-sidebar">
+    <a href="dashboard.html" class="dash-sidebar-logo">
+      <div class="dash-sidebar-logo-icon">☀</div>
+      <div class="dash-sidebar-logo-text">Solar<span>Map</span> AI</div>
+    </a>
+
+    <nav class="dash-nav">
+      <div class="dash-nav-section">Principal</div>
+      <a href="dashboard.html" class="dash-nav-item">
+        <span class="dash-nav-icon">📊</span> Painel Geral
+      </a>
+      <a href="dashboard-simulador.html" class="dash-nav-item">
+        <span class="dash-nav-icon">☀️</span> Simulador
+      </a>
+
+      <div class="dash-nav-section">Gestão</div>
+      <a href="dashboard-projetos.html" class="dash-nav-item">
+        <span class="dash-nav-icon">📁</span> Projetos
+      </a>
+      <a href="dashboard-orcamentos.html" class="dash-nav-item">
+        <span class="dash-nav-icon">💰</span> Orçamentos
+      </a>
+
+      <div class="dash-nav-section">Conta</div>
+      <a href="dashboard-perfil.html" class="dash-nav-item active">
+        <span class="dash-nav-icon">👤</span> Meu Perfil
+      </a>
+    </nav>
+
+    <div class="dash-sidebar-footer">
+      <div class="dash-user-info" onclick="window.location.href='dashboard-perfil.html'">
+        <div class="dash-user-avatar" id="dashUserAvatar">U</div>
+        <div>
+          <div class="dash-user-name" id="dashUserName">Carregando...</div>
+          <div class="dash-user-email" id="dashUserEmail"></div>
+        </div>
+      </div>
+      <button class="dash-logout" onclick="authSignOut()">
+        <span>🚪</span> Sair da conta
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dash-main">
+    <div class="dash-header">
+      <div class="dash-header-left">
+        <h1>Meu Perfil</h1>
+        <p>Gerencie suas informações pessoais e configurações</p>
+      </div>
+    </div>
+
+    <!-- Profile Cards Grid -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px;">
+
+      <!-- Personal Info -->
+      <div class="glass-card">
+        <h3 style="margin-bottom:20px;">Informações pessoais</h3>
+
+        <div id="profileAlert" style="display:none;padding:12px;border-radius:12px;font-size:0.85rem;margin-bottom:16px;"></div>
+
+        <div class="form-group">
+          <label class="form-label">Nome completo</label>
+          <input type="text" class="form-input" id="profileName" placeholder="Seu nome">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-input" id="profileEmail" placeholder="email@exemplo.com" readonly style="opacity:0.6;cursor:not-allowed;">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Telefone</label>
+          <input type="tel" class="form-input" id="profilePhone" placeholder="(00) 00000-0000">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Empresa</label>
+          <input type="text" class="form-input" id="profileCompany" placeholder="Nome da sua empresa">
+        </div>
+
+        <button class="btn-primary" style="width:100%" onclick="saveProfileForm()">Salvar informações</button>
+      </div>
+
+      <!-- Change Password -->
+      <div class="glass-card">
+        <h3 style="margin-bottom:20px;">Alterar senha</h3>
+
+        <div id="passwordAlert" style="display:none;padding:12px;border-radius:12px;font-size:0.85rem;margin-bottom:16px;"></div>
+
+        <div class="form-group">
+          <label class="form-label">Nova senha</label>
+          <input type="password" class="form-input" id="newPassword" placeholder="Mínimo 6 caracteres">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Confirmar nova senha</label>
+          <input type="password" class="form-input" id="confirmPassword" placeholder="Repita a nova senha">
+        </div>
+
+        <button class="btn-primary" style="width:100%" onclick="changePassword()">Alterar senha</button>
+      </div>
+    </div>
+
+    <!-- Plan Info -->
+    <div class="glass-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
+        <div>
+          <h3 style="margin-bottom:8px;">Plano atual</h3>
+          <p style="color:var(--muted);margin:0;">Você está no plano <strong style="color:var(--gold);">Gratuito</strong>. Aproveite as funcionalidades básicas da plataforma.</p>
+        </div>
+        <span class="badge badge-gold" style="font-size:0.9rem;padding:8px 20px;">Free</span>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/guard.js"></script>
+<script>
+// Generate orbs
+generateOrbs(150);
+
+// Highlight active nav
+const currentPage = window.location.pathname.split('/').pop();
+document.querySelectorAll('.dash-nav-item').forEach(item => {
+  item.classList.toggle('active', item.getAttribute('href') === currentPage);
+});
+
+// ── Load Profile ──
+async function loadProfile() {
+  try {
+    const userData = await authGetProfile();
+    if (!userData) return;
+
+    document.getElementById('profileEmail').value = userData.email || '';
+    document.getElementById('profileName').value = userData.profile?.full_name || userData.user_metadata?.full_name || '';
+    document.getElementById('profilePhone').value = userData.profile?.phone || '';
+    document.getElementById('profileCompany').value = userData.profile?.company || '';
+  } catch (e) {
+    console.error('Erro ao carregar perfil:', e.message);
+  }
+}
+
+// ── Save Profile ──
+async function saveProfileForm() {
+  const alert = document.getElementById('profileAlert');
+  const fullName = document.getElementById('profileName').value.trim();
+  const phone = document.getElementById('profilePhone').value.trim();
+  const company = document.getElementById('profileCompany').value.trim();
+
+  if (!fullName) {
+    showAlert(alert, 'Informe seu nome completo.', 'error');
+    return;
+  }
+
+  try {
+    await authUpdateProfile({
+      full_name: fullName,
+      phone: phone,
+      company: company
+    });
+    showAlert(alert, 'Perfil atualizado com sucesso!', 'success');
+
+    // Update sidebar name
+    const nameEl = document.getElementById('dashUserName');
+    if (nameEl) nameEl.textContent = fullName;
+  } catch (e) {
+    showAlert(alert, 'Erro: ' + e.message, 'error');
+  }
+}
+
+// ── Change Password ──
+async function changePassword() {
+  const alert = document.getElementById('passwordAlert');
+  const newPass = document.getElementById('newPassword').value;
+  const confirmPass = document.getElementById('confirmPassword').value;
+
+  if (!newPass || newPass.length < 6) {
+    showAlert(alert, 'A senha deve ter no mínimo 6 caracteres.', 'error');
+    return;
+  }
+
+  if (newPass !== confirmPass) {
+    showAlert(alert, 'As senhas não coincidem.', 'error');
+    return;
+  }
+
+  try {
+    await authUpdatePassword(newPass);
+    showAlert(alert, 'Senha alterada com sucesso!', 'success');
+    document.getElementById('newPassword').value = '';
+    document.getElementById('confirmPassword').value = '';
+  } catch (e) {
+    showAlert(alert, 'Erro: ' + e.message, 'error');
+  }
+}
+
+// ── Alert Helper ──
+function showAlert(el, message, type) {
+  el.style.display = 'block';
+  el.textContent = message;
+  if (type === 'success') {
+    el.style.background = 'rgba(0,255,136,0.12)';
+    el.style.color = '#00ff88';
+  } else {
+    el.style.background = 'rgba(255,107,107,0.15)';
+    el.style.color = '#ff6b6b';
+  }
+  setTimeout(() => { el.style.display = 'none'; }, 5000);
+}
+
+// Responsive: stack cards on mobile
+const style = document.createElement('style');
+style.textContent = `@media(max-width:768px){main .glass-card{min-width:100%}[style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr!important;}}`;
+document.head.appendChild(style);
+
+// Init
+loadProfile();
+</script>
+</body>
+</html>

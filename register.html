@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Criar Conta — SolarMap AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/shared.css">
+<link rel="stylesheet" href="css/auth.css">
+</head>
+<body>
+
+<!-- Cosmic Background -->
+<div class="cosmic-bg"></div>
+<div class="cosmic-stars"></div>
+<div class="energy-orbs" id="energyOrbs"></div>
+
+<!-- Register Page -->
+<div class="auth-page">
+  <a href="index.html" style="position:fixed;top:24px;left:24px;z-index:100;background:rgba(6,12,20,0.85);backdrop-filter:blur(12px);border:1px solid rgba(238,244,255,0.1);border-radius:12px;padding:10px 20px;color:var(--ice);text-decoration:none;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:8px;">← Voltar ao site</a>
+  <div class="auth-card">
+
+    <!-- Logo -->
+    <a href="index.html" class="auth-logo">
+      <div class="auth-logo-icon">&#9788;</div>
+      <div class="auth-logo-text">Solar<span>Map</span> AI</div>
+    </a>
+
+    <!-- Title -->
+    <h1 class="auth-title">Crie sua conta</h1>
+    <p class="auth-subtitle">Comece a simular energia solar em minutos</p>
+
+    <!-- Alert -->
+    <div id="authAlert" class="alert" role="alert"></div>
+
+    <!-- Register Form -->
+    <form id="registerForm" autocomplete="off" novalidate>
+      <div class="form-group">
+        <label class="form-label" for="fullName">Nome completo</label>
+        <input type="text" id="fullName" class="form-input" placeholder="Seu nome completo" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="email">Email</label>
+        <input type="email" id="email" class="form-input" placeholder="seu@email.com" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="password">Senha</label>
+        <div class="password-wrap">
+          <input type="password" id="password" class="form-input" placeholder="Minimo 6 caracteres" required>
+          <button type="button" class="password-toggle" onclick="togglePassword('password', this)" aria-label="Mostrar senha">&#128065;</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="confirmPassword">Confirmar senha</label>
+        <div class="password-wrap">
+          <input type="password" id="confirmPassword" class="form-input" placeholder="Repita sua senha" required>
+          <button type="button" class="password-toggle" onclick="togglePassword('confirmPassword', this)" aria-label="Mostrar senha">&#128065;</button>
+        </div>
+      </div>
+
+      <button type="submit" id="btnSubmit" class="btn-primary btn-block">
+        Criar conta gratis
+      </button>
+    </form>
+
+    <!-- Footer -->
+    <div class="auth-footer">
+      Ja tem conta? <a href="login.html">Entrar</a>
+    </div>
+
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/guard.js"></script>
+
+<script>
+// Generate energy orbs
+(function() {
+  const container = document.getElementById('energyOrbs');
+  const classes = ['orb--gold', 'orb--green', 'orb--white', 'orb--orange', 'orb--blue'];
+  const animations = ['orbDrift', 'orbPulse', 'orbFloat'];
+
+  for (let i = 0; i < 100; i++) {
+    const orb = document.createElement('div');
+    const cls = classes[Math.floor(Math.random() * classes.length)];
+    const anim = animations[Math.floor(Math.random() * animations.length)];
+    const size = Math.random() * 6 + 2;
+    const x = Math.random() * 100;
+    const y = Math.random() * 100;
+    const duration = Math.random() * 15 + 8;
+    const delay = Math.random() * 10;
+    const driftX = (Math.random() - 0.5) * 200;
+
+    orb.className = 'orb ' + cls;
+    orb.style.cssText =
+      'width:' + size + 'px;height:' + size + 'px;' +
+      'left:' + x + '%;top:' + y + '%;' +
+      '--drift-x:' + driftX + 'px;' +
+      '--dx:' + (Math.random() * 80 - 40) + 'px;' +
+      '--dy:' + (Math.random() * 80 - 40) + 'px;' +
+      '--dx2:' + (Math.random() * 60 - 30) + 'px;' +
+      '--dy2:' + (Math.random() * 60 - 30) + 'px;' +
+      '--scale-mid:' + (Math.random() * 0.8 + 0.8) + ';' +
+      'animation:' + anim + ' ' + duration + 's ease-in-out ' + delay + 's infinite;';
+
+    container.appendChild(orb);
+  }
+})();
+
+// Password toggle
+function togglePassword(fieldId, btn) {
+  const input = document.getElementById(fieldId);
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.innerHTML = '&#128064;';
+  } else {
+    input.type = 'password';
+    btn.innerHTML = '&#128065;';
+  }
+}
+
+// Alert helpers
+function showAlert(message, type) {
+  const alert = document.getElementById('authAlert');
+  alert.textContent = message;
+  alert.className = 'alert alert-' + type + ' visible';
+}
+
+function hideAlert() {
+  const alert = document.getElementById('authAlert');
+  alert.className = 'alert';
+  alert.textContent = '';
+}
+
+// Email validation
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+// Form submit
+document.getElementById('registerForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  hideAlert();
+
+  const fullName = document.getElementById('fullName').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const confirmPassword = document.getElementById('confirmPassword').value;
+  const btn = document.getElementById('btnSubmit');
+
+  // Clear previous errors
+  document.querySelectorAll('.form-input').forEach(function(el) { el.classList.remove('error'); });
+
+  // Validate name
+  if (fullName.length < 2) {
+    document.getElementById('fullName').classList.add('error');
+    showAlert('Nome deve ter pelo menos 2 caracteres.', 'error');
+    return;
+  }
+
+  // Validate email
+  if (!isValidEmail(email)) {
+    document.getElementById('email').classList.add('error');
+    showAlert('Informe um email valido.', 'error');
+    return;
+  }
+
+  // Validate password
+  if (password.length < 6) {
+    document.getElementById('password').classList.add('error');
+    showAlert('A senha deve ter pelo menos 6 caracteres.', 'error');
+    return;
+  }
+
+  // Validate password match
+  if (password !== confirmPassword) {
+    document.getElementById('confirmPassword').classList.add('error');
+    showAlert('As senhas nao coincidem.', 'error');
+    return;
+  }
+
+  // Loading state
+  var originalText = btn.textContent;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Criando conta...';
+
+  try {
+    var data = await authSignUp(email, password, fullName);
+
+    if (data.user && data.user.identities && data.user.identities.length === 0) {
+      showAlert('Este email ja esta cadastrado.', 'error');
+    } else if (data.session) {
+      // Auto-confirmed, redirect to dashboard
+      window.location.href = 'dashboard.html';
+    } else {
+      // Needs email verification
+      showAlert('Conta criada! Verifique seu email.', 'success');
+      document.getElementById('registerForm').reset();
+    }
+  } catch (err) {
+    var msg = err.message || 'Erro ao criar conta. Tente novamente.';
+    if (msg.includes('already registered')) {
+      msg = 'Este email ja esta cadastrado.';
+    }
+    showAlert(msg, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
+});
+
+// Generate energy orbs
+(function(){const c=document.getElementById('energyOrbs');if(!c)return;const t=['orb--gold','orb--green','orb--white','orb--orange','orb--blue'];for(let i=0;i<150;i++){const o=document.createElement('div');const s=Math.random()*10+2;const d=Math.random()*25+6;const dl=Math.random()*20;const dx=(Math.random()-0.5)*400;const a=i%3;let an;if(a===0){an=`orbDrift ${d}s ${dl}s linear infinite`;o.style.setProperty('--drift-x',dx+'px');}else if(a===1){an=`orbPulse ${Math.random()*5+2}s ${dl}s ease-in-out infinite`;}else{o.style.setProperty('--dx',(Math.random()-0.5)*300+'px');o.style.setProperty('--dy',(Math.random()-0.5)*300+'px');o.style.setProperty('--dx2',(Math.random()-0.5)*400+'px');o.style.setProperty('--dy2',(Math.random()-0.5)*400+'px');o.style.setProperty('--scale-mid',(Math.random()*1.2+0.6).toFixed(2));an=`orbFloat ${d}s ${dl}s ease-in-out infinite`;}o.className='orb '+t[i%5];o.style.cssText+=`width:${s}px;height:${s}px;left:${Math.random()*100}%;top:${Math.random()*100}%;animation:${an};`;c.appendChild(o);}})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — SolarMap AI</title>
+<link rel="stylesheet" href="css/shared.css">
+<link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+
+<!-- Cosmic Background -->
+<div class="cosmic-bg"></div>
+<div class="cosmic-stars"></div>
+<div class="energy-orbs" id="energyOrbs"></div>
+
+<!-- Mobile Toggle -->
+<button class="dash-mobile-toggle" onclick="toggleDashSidebar()">☰</button>
+
+<!-- Sidebar -->
+<div class="dash-layout">
+  <aside class="dash-sidebar">
+    <a href="dashboard.html" class="dash-sidebar-logo">
+      <div class="dash-sidebar-logo-icon">☀</div>
+      <div class="dash-sidebar-logo-text">Solar<span>Map</span> AI</div>
+    </a>
+
+    <nav class="dash-nav">
+      <div class="dash-nav-section">Principal</div>
+      <a href="dashboard.html" class="dash-nav-item active">
+        <span class="dash-nav-icon">📊</span> Painel Geral
+      </a>
+      <a href="dashboard-simulador.html" class="dash-nav-item">
+        <span class="dash-nav-icon">☀️</span> Simulador
+      </a>
+
+      <div class="dash-nav-section">Gestão</div>
+      <a href="dashboard-projetos.html" class="dash-nav-item">
+        <span class="dash-nav-icon">📁</span> Projetos
+      </a>
+      <a href="dashboard-orcamentos.html" class="dash-nav-item">
+        <span class="dash-nav-icon">💰</span> Orçamentos
+      </a>
+
+      <div class="dash-nav-section">Conta</div>
+      <a href="dashboard-perfil.html" class="dash-nav-item">
+        <span class="dash-nav-icon">👤</span> Meu Perfil
+      </a>
+    </nav>
+
+    <div class="dash-sidebar-footer">
+      <div class="dash-user-info" onclick="window.location.href='dashboard-perfil.html'">
+        <div class="dash-user-avatar" id="dashUserAvatar">U</div>
+        <div>
+          <div class="dash-user-name" id="dashUserName">Carregando...</div>
+          <div class="dash-user-email" id="dashUserEmail"></div>
+        </div>
+      </div>
+      <button class="dash-logout" onclick="authSignOut()">
+        <span>🚪</span> Sair da conta
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dash-main">
+    <div class="dash-header">
+      <div class="dash-header-left">
+        <h1>Painel Geral</h1>
+        <p>Resumo das suas atividades e projetos solares</p>
+      </div>
+      <a href="dashboard-simulador.html" class="btn-primary">Nova simulação ↗</a>
+    </div>
+
+    <!-- Stats -->
+    <div class="dash-stats" id="dashStats">
+      <div class="dash-stat-card">
+        <div class="dash-stat-icon gold">☀️</div>
+        <div class="dash-stat-label">Simulações</div>
+        <div class="dash-stat-value grad-gold" id="statSims">0</div>
+      </div>
+      <div class="dash-stat-card">
+        <div class="dash-stat-icon green">📁</div>
+        <div class="dash-stat-label">Projetos</div>
+        <div class="dash-stat-value grad-green" id="statProjects">0</div>
+      </div>
+      <div class="dash-stat-card">
+        <div class="dash-stat-icon blue">💰</div>
+        <div class="dash-stat-label">Orçamentos</div>
+        <div class="dash-stat-value" style="color:#5AAFFF" id="statBudgets">0</div>
+      </div>
+      <div class="dash-stat-card">
+        <div class="dash-stat-icon gold">📈</div>
+        <div class="dash-stat-label">Economia Total Projetada</div>
+        <div class="dash-stat-value grad-gold" id="statSavings">R$ 0</div>
+      </div>
+    </div>
+
+    <!-- Recent Simulations -->
+    <div class="dash-table-wrap" style="margin-bottom:32px">
+      <div class="dash-table-header">
+        <h3>Simulações Recentes</h3>
+        <a href="dashboard-simulador.html" class="btn-ghost" style="padding:8px 20px;font-size:0.8rem;">Ver todas</a>
+      </div>
+      <div id="recentSimsContent">
+        <div class="dash-empty">
+          <div class="dash-empty-icon">☀️</div>
+          <h3>Nenhuma simulação ainda</h3>
+          <p>Comece simulando a energia solar do seu primeiro endereço.</p>
+          <a href="dashboard-simulador.html" class="btn-primary">Criar simulação ↗</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Projects -->
+    <div class="dash-table-wrap">
+      <div class="dash-table-header">
+        <h3>Projetos Recentes</h3>
+        <a href="dashboard-projetos.html" class="btn-ghost" style="padding:8px 20px;font-size:0.8rem;">Ver todos</a>
+      </div>
+      <div id="recentProjectsContent">
+        <div class="dash-empty">
+          <div class="dash-empty-icon">📁</div>
+          <h3>Nenhum projeto ainda</h3>
+          <p>Crie seu primeiro projeto solar para organizar simulações e orçamentos.</p>
+          <a href="dashboard-projetos.html" class="btn-primary">Criar projeto ↗</a>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/guard.js"></script>
+<script>
+// Generate orbs
+generateOrbs(150);
+
+// Load dashboard data
+(async function loadDashboard() {
+  try {
+    const stats = await getDashboardStats();
+    document.getElementById('statSims').textContent = stats.simulationCount;
+    document.getElementById('statProjects').textContent = stats.projectCount;
+    document.getElementById('statBudgets').textContent = stats.budgetCount;
+    document.getElementById('statSavings').textContent = formatCurrency(stats.totalSavings);
+
+    // Load recent simulations
+    const sims = await getSimulations();
+    if (sims.length > 0) {
+      const recent = sims.slice(0, 5);
+      document.getElementById('recentSimsContent').innerHTML = `
+        <table class="dash-table">
+          <thead><tr><th>Endereço</th><th>Painéis</th><th>Economia/ano</th><th>Payback</th><th>Data</th></tr></thead>
+          <tbody>${recent.map(s => `
+            <tr>
+              <td>${s.address || '—'}</td>
+              <td>${s.panels || '—'}</td>
+              <td style="color:var(--green)">${formatCurrency(s.annual_savings)}</td>
+              <td>${s.payback_years ? s.payback_years.toFixed(1) + ' anos' : '—'}</td>
+              <td style="color:var(--muted)">${formatDate(s.created_at)}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>`;
+    }
+
+    // Load recent projects
+    const projects = await getProjects();
+    if (projects.length > 0) {
+      const recent = projects.slice(0, 5);
+      const statusMap = { rascunho:'badge-muted', 'em análise':'badge-gold', aprovado:'badge-green', instalando:'badge-blue', concluído:'badge-green' };
+      document.getElementById('recentProjectsContent').innerHTML = `
+        <table class="dash-table">
+          <thead><tr><th>Nome</th><th>Status</th><th>Painéis</th><th>Investimento</th><th>Data</th></tr></thead>
+          <tbody>${recent.map(p => `
+            <tr>
+              <td><strong>${p.name}</strong></td>
+              <td><span class="badge ${statusMap[p.status] || 'badge-muted'}">${p.status}</span></td>
+              <td>${p.panels || '—'}</td>
+              <td>${p.investment ? formatCurrency(p.investment) : '—'}</td>
+              <td style="color:var(--muted)">${formatDate(p.created_at)}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>`;
+    }
+  } catch (e) {
+    console.log('Dashboard load:', e.message);
+  }
+})();
+
+// Highlight active nav
+const currentPage = window.location.pathname.split('/').pop();
+document.querySelectorAll('.dash-nav-item').forEach(item => {
+  item.classList.toggle('active', item.getAttribute('href') === currentPage);
+});
+</script>
+</body>
+</html>

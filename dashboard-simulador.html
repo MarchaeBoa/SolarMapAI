@@ -1,0 +1,1476 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador Solar — SolarMap AI</title>
+<link rel="stylesheet" href="css/shared.css">
+<link rel="stylesheet" href="css/dashboard.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css">
+<style>
+.dash-main { padding: 0 !important; overflow: hidden; }
+
+/* Fix select dropdown visibility */
+select option {
+  background: #0A1628 !important;
+  color: #EEF4FF !important;
+  padding: 8px !important;
+  font-size: 0.9rem !important;
+}
+
+/* Sharpen satellite tiles on zoom */
+.leaflet-tile-container img {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  filter: contrast(1.08) saturate(1.1) brightness(1.02);
+}
+/* Keep OSM labels readable */
+.osm-labels-layer { mix-blend-mode: screen; }
+
+/* Full screen map */
+.map-wrap {
+  position: relative; width: 100%; height: calc(100vh - 0px);
+}
+#solarMap { width: 100%; height: 100%; }
+
+/* Floating search bar */
+.float-search {
+  position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1000;
+  display: flex; gap: 8px; width: 90%; max-width: 600px;
+}
+.float-search input {
+  flex: 1; padding: 14px 20px; font-size: 0.95rem;
+  background: rgba(6,12,20,0.85); backdrop-filter: blur(20px);
+  border: 1px solid rgba(212,168,67,0.3); border-radius: 14px;
+  color: var(--ice); font-family: 'Inter', sans-serif; outline: none;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  transition: var(--transition);
+}
+.float-search input:focus { border-color: var(--gold); box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 0 3px rgba(212,168,67,0.15); }
+.float-search input::placeholder { color: var(--muted); }
+.float-search button {
+  padding: 14px 24px; border-radius: 14px; border: none;
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  color: var(--midnight); font-weight: 700; cursor: pointer;
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.9rem;
+  box-shadow: 0 4px 20px rgba(212,168,67,0.4);
+  transition: var(--transition); white-space: nowrap;
+}
+.float-search button:hover { transform: translateY(-1px); box-shadow: 0 8px 30px rgba(212,168,67,0.5); }
+
+/* Floating control panel */
+.float-panel {
+  position: absolute; top: 80px; right: 20px; z-index: 1000;
+  width: 340px; max-height: calc(100vh - 120px); overflow-y: auto;
+  display: flex; flex-direction: column; gap: 12px;
+  scrollbar-width: thin; scrollbar-color: var(--gold) transparent;
+}
+.float-panel::-webkit-scrollbar { width: 4px; }
+.float-panel::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 99px; }
+
+.fp-card {
+  background: rgba(6,12,20,0.88); backdrop-filter: blur(20px);
+  border: 1px solid rgba(212,168,67,0.15); border-radius: 16px;
+  padding: 20px; box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+}
+.fp-card h4 {
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.88rem; font-weight: 700;
+  color: var(--ice); margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+}
+
+/* Steps */
+.fp-steps { display: flex; flex-direction: column; gap: 8px; }
+.fp-step {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px; border-radius: 10px;
+  font-size: 0.82rem; color: var(--muted); line-height: 1.4;
+  background: rgba(238,244,255,0.03); border: 1px solid rgba(238,244,255,0.06);
+  transition: var(--transition);
+}
+.fp-step-dot {
+  width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem; font-weight: 700;
+  background: rgba(238,244,255,0.06); color: var(--muted);
+  border: 1px solid var(--border);
+}
+.fp-step.active { color: var(--ice); border-color: var(--gold); background: rgba(212,168,67,0.06); }
+.fp-step.active .fp-step-dot { background: var(--gold-glow); color: var(--gold); border-color: var(--border-gold); }
+.fp-step.done { color: var(--green); border-color: rgba(31,216,164,0.2); background: rgba(31,216,164,0.04); }
+.fp-step.done .fp-step-dot { background: var(--green-glow); color: var(--green); border-color: rgba(31,216,164,0.3); }
+
+/* Config fields */
+.fp-field { margin-bottom: 12px; }
+.fp-field:last-child { margin-bottom: 0; }
+.fp-field label { display: block; font-size: 0.75rem; color: var(--muted); margin-bottom: 5px; }
+.fp-field select, .fp-field input {
+  width: 100%; padding: 10px 14px; border-radius: 10px;
+  background: rgba(238,244,255,0.06); border: 1px solid var(--border);
+  color: var(--ice); font-family: 'Inter', sans-serif; font-size: 0.88rem;
+  outline: none; transition: var(--transition);
+}
+.fp-field select:focus, .fp-field input:focus { border-color: var(--gold); }
+
+/* Buttons */
+.fp-actions { display: flex; gap: 8px; }
+.fp-btn {
+  flex: 1; padding: 12px; border-radius: 12px; border: none;
+  font-weight: 700; cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.85rem; transition: var(--transition);
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.fp-btn-go {
+  background: linear-gradient(135deg, var(--green), var(--green-dim));
+  color: var(--midnight); box-shadow: 0 4px 16px rgba(31,216,164,0.3);
+}
+.fp-btn-go:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(31,216,164,0.4); }
+.fp-btn-go:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.fp-btn-clear {
+  background: rgba(255,95,87,0.1); border: 1px solid rgba(255,95,87,0.2) !important;
+  color: #FF8A84; flex: 0 0 auto; padding: 12px 16px;
+}
+.fp-btn-clear:hover { background: rgba(255,95,87,0.2); }
+
+/* Results */
+.fp-results { display: none; }
+.fp-results.visible { display: block; animation: fadeUp 0.4s ease-out; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+.res-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+.res-item {
+  padding: 12px; border-radius: 10px; text-align: center;
+  background: rgba(238,244,255,0.04); border: 1px solid rgba(238,244,255,0.06);
+}
+.res-item .rl { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 3px; }
+.res-item .rv { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.15rem; font-weight: 800; }
+.rv.gold { color: var(--gold-light); }
+.rv.green { color: var(--green); }
+.rv.blue { color: #5AAFFF; }
+
+.fp-btn-save {
+  width: 100%; padding: 12px; border-radius: 12px; border: none;
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  color: var(--midnight); font-weight: 700; cursor: pointer;
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.88rem;
+  transition: var(--transition);
+}
+.fp-btn-save:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(212,168,67,0.4); }
+
+/* Map info badge */
+.map-badge {
+  position: absolute; bottom: 20px; left: 20px; z-index: 1000;
+  background: rgba(6,12,20,0.85); backdrop-filter: blur(12px);
+  border: 1px solid var(--border-gold); border-radius: 10px;
+  padding: 10px 16px; display: flex; align-items: center; gap: 8px;
+  font-size: 0.78rem; color: var(--ice);
+}
+.map-badge .live { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+/* Back to dashboard */
+.float-back {
+  position: absolute; top: 24px; left: 20px; z-index: 1000;
+  background: rgba(6,12,20,0.85); backdrop-filter: blur(12px);
+  border: 1px solid var(--border); border-radius: 12px;
+  padding: 10px 18px; color: var(--ice); text-decoration: none;
+  font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 8px;
+  transition: var(--transition);
+}
+.float-back:hover { border-color: var(--gold); color: var(--gold); }
+
+/* Leaflet draw customization — bigger, more visible */
+.leaflet-draw-toolbar { margin-top: 70px !important; }
+.leaflet-draw-toolbar a {
+  background-color: rgba(6,12,20,0.92) !important;
+  border-color: rgba(212,168,67,0.4) !important;
+  color: var(--ice) !important;
+  width: 42px !important; height: 42px !important;
+  line-height: 42px !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4) !important;
+}
+.leaflet-draw-toolbar a:hover {
+  background-color: rgba(212,168,67,0.25) !important;
+  border-color: var(--gold) !important;
+}
+.leaflet-draw-actions { margin-top: 4px !important; }
+.leaflet-draw-actions a {
+  background-color: rgba(6,12,20,0.92) !important;
+  color: var(--ice) !important;
+  border-radius: 8px !important;
+  padding: 6px 12px !important;
+  font-size: 0.82rem !important;
+}
+.leaflet-draw-actions a:hover { background-color: rgba(212,168,67,0.2) !important; }
+/* Draw tooltip */
+.leaflet-draw-tooltip {
+  background: rgba(6,12,20,0.9) !important;
+  border: 1px solid rgba(212,168,67,0.3) !important;
+  color: var(--ice) !important;
+  border-radius: 10px !important;
+  padding: 8px 14px !important;
+  font-family: 'Inter', sans-serif !important;
+  font-size: 0.82rem !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4) !important;
+}
+.leaflet-draw-tooltip:before { border-right-color: rgba(6,12,20,0.9) !important; }
+
+/* ══ PANEL PLACER ══ */
+.panel-placer {
+  position: absolute; top: 80px; left: 70px; z-index: 1001;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.pp-btn {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 22px; border-radius: 14px; border: none; cursor: pointer;
+  background: rgba(6,12,20,0.92); backdrop-filter: blur(20px);
+  border: 2px solid rgba(31,216,164,0.3);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  transition: var(--transition);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+.pp-btn:hover { border-color: var(--green); box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 20px rgba(31,216,164,0.15); }
+.pp-btn.active { border-color: var(--green); background: rgba(31,216,164,0.15); }
+.pp-icon { font-size: 1.3rem; }
+.pp-text { font-size: 0.85rem; font-weight: 700; color: var(--ice); }
+.pp-btn.active .pp-text { color: var(--green); }
+
+.pp-info {
+  background: rgba(6,12,20,0.92); backdrop-filter: blur(20px);
+  border: 1px solid rgba(212,168,67,0.2); border-radius: 14px;
+  padding: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+.pp-mini-btn {
+  flex: 1; padding: 8px; border-radius: 8px; border: none; cursor: pointer;
+  font-size: 0.85rem; background: rgba(238,244,255,0.06); color: var(--ice);
+  border: 1px solid var(--border); transition: var(--transition);
+}
+.pp-mini-btn:hover { border-color: var(--gold); }
+.pp-clear:hover { border-color: rgba(255,95,87,0.4); color: #FF8A84; }
+
+/* Map panel markers */
+.map-panel-marker {
+  cursor: grab !important; transition: filter 0.15s;
+}
+.map-panel-marker:hover { filter: brightness(1.3); z-index: 9999 !important; }
+.map-panel-marker.selected { filter: brightness(1.5) drop-shadow(0 0 8px rgba(31,216,164,0.6)); }
+
+.panel-svg { pointer-events: all; }
+
+/* ══ MODE TABS ══ */
+.mode-tabs {
+  position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1001;
+  display: flex; background: rgba(6,12,20,0.88); backdrop-filter: blur(20px);
+  border: 1px solid rgba(212,168,67,0.2); border-radius: 14px; overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+.mode-tab {
+  padding: 12px 24px; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+  color: var(--muted); border: none; background: none; transition: var(--transition);
+  font-family: 'Plus Jakarta Sans', sans-serif; display: flex; align-items: center; gap: 6px;
+}
+.mode-tab:hover { color: var(--ice); }
+.mode-tab.active { color: var(--midnight); background: linear-gradient(135deg, var(--gold-light), var(--gold)); }
+
+/* ══ PHOTO MODE ══ */
+.photo-wrap {
+  position: absolute; inset: 0; z-index: 5; display: none;
+  background: #0a0f18;
+}
+.photo-wrap.active { display: flex; }
+
+.photo-canvas-area {
+  flex: 1; position: relative; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+.photo-canvas-area img {
+  max-width: 100%; max-height: 100%; object-fit: contain; user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Upload zone */
+.photo-upload-zone {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 16px; padding: 60px; text-align: center;
+  border: 2px dashed rgba(212,168,67,0.3); border-radius: 24px;
+  max-width: 500px; cursor: pointer; transition: var(--transition);
+}
+.photo-upload-zone:hover { border-color: var(--gold); background: rgba(212,168,67,0.04); }
+.photo-upload-zone .icon { font-size: 3rem; opacity: 0.6; }
+.photo-upload-zone h3 { font-size: 1.1rem; color: var(--ice); }
+.photo-upload-zone p { font-size: 0.85rem; color: var(--muted); }
+
+/* 3D Solar panel element */
+.solar-panel-3d {
+  position: absolute; cursor: grab; user-select: none;
+  width: 60px; height: 40px;
+  transform-style: preserve-3d; perspective: 200px;
+  transition: box-shadow 0.2s;
+  z-index: 10;
+}
+.solar-panel-3d:hover { z-index: 20; }
+.solar-panel-3d .panel-face {
+  width: 100%; height: 100%; border-radius: 3px;
+  background: linear-gradient(145deg, #1a3a6c, #0e2545);
+  border: 1.5px solid rgba(31,216,164,0.5);
+  transform: rotateX(25deg) rotateY(-5deg);
+  box-shadow: 2px 4px 12px rgba(0,0,0,0.5), inset 0 0 8px rgba(31,216,164,0.1);
+  display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr 1fr; gap: 1px;
+  padding: 2px; overflow: hidden;
+}
+.solar-panel-3d .cell {
+  background: linear-gradient(145deg, #1e4070, #132d52);
+  border-radius: 1px;
+}
+.solar-panel-3d .panel-shadow {
+  position: absolute; bottom: -4px; left: 4px; right: -2px; height: 6px;
+  background: rgba(0,0,0,0.3); filter: blur(4px); border-radius: 50%;
+  transform: rotateX(25deg);
+}
+.solar-panel-3d .del-btn {
+  position: absolute; top: -10px; right: -10px; width: 20px; height: 20px;
+  background: rgba(255,95,87,0.9); border: none; border-radius: 50%;
+  color: #fff; font-size: 0.7rem; cursor: pointer; display: none;
+  align-items: center; justify-content: center; z-index: 30;
+}
+.solar-panel-3d:hover .del-btn { display: flex; }
+
+/* Rotation ring — always visible */
+.solar-panel-3d .rotate-ring {
+  position: absolute; inset: -16px; border-radius: 50%;
+  border: 2px dashed rgba(212,168,67,0.3);
+  pointer-events: none; z-index: 25;
+}
+.solar-panel-3d.rotating .rotate-ring { border-color: var(--green); border-style: solid; }
+
+/* Rotation handle — always visible, big circle */
+.solar-panel-3d .rotate-handle {
+  position: absolute; top: -22px; left: 50%; transform: translateX(-50%);
+  width: 28px; height: 28px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  border: 2px solid rgba(6,12,20,0.8);
+  cursor: grab; z-index: 30;
+  box-shadow: 0 2px 12px rgba(212,168,67,0.7);
+  transition: background 0.15s;
+  display: flex; align-items: center; justify-content: center;
+}
+.solar-panel-3d .rotate-handle::after {
+  content: '↻'; font-size: 0.85rem; color: var(--midnight); font-weight: 800;
+}
+.solar-panel-3d .rotate-handle:hover { background: linear-gradient(135deg, #5AFAC8, var(--green)); transform: translateX(-50%) scale(1.15); }
+.solar-panel-3d.rotating .rotate-handle {
+  background: linear-gradient(135deg, #5AFAC8, var(--green)) !important;
+  box-shadow: 0 0 20px rgba(31,216,164,0.6);
+  transform: translateX(-50%) scale(1.2);
+}
+
+/* Rotation label — always visible */
+.solar-panel-3d .rotation-label {
+  position: absolute; top: -40px; left: 50%; transform: translateX(-50%);
+  font-size: 0.65rem; color: var(--gold); font-weight: 700;
+  background: rgba(6,12,20,0.9); padding: 3px 8px; border-radius: 6px;
+  white-space: nowrap; border: 1px solid rgba(212,168,67,0.3);
+}
+.solar-panel-3d.rotating .rotation-label { color: var(--green); border-color: rgba(31,216,164,0.3); }
+
+/* Photo panel controls */
+.photo-controls {
+  position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 100;
+  display: flex; gap: 10px; background: rgba(6,12,20,0.9); backdrop-filter: blur(16px);
+  border: 1px solid rgba(212,168,67,0.2); border-radius: 14px; padding: 10px 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+.photo-ctrl-btn {
+  padding: 10px 18px; border-radius: 10px; border: none; cursor: pointer;
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.82rem; font-weight: 600;
+  transition: var(--transition); display: flex; align-items: center; gap: 6px;
+}
+.photo-ctrl-add { background: linear-gradient(135deg, var(--green), var(--green-dim)); color: var(--midnight); }
+.photo-ctrl-add:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(31,216,164,0.3); }
+.photo-ctrl-clear { background: rgba(255,95,87,0.1); color: #FF8A84; border: 1px solid rgba(255,95,87,0.2) !important; }
+.photo-ctrl-upload { background: rgba(238,244,255,0.08); color: var(--ice); border: 1px solid var(--border) !important; }
+.photo-ctrl-upload:hover { border-color: var(--gold) !important; color: var(--gold); }
+
+/* Photo panel counter */
+.photo-counter {
+  position: absolute; top: 80px; left: 20px; z-index: 100;
+  background: rgba(6,12,20,0.9); backdrop-filter: blur(16px);
+  border: 1px solid rgba(31,216,164,0.2); border-radius: 12px;
+  padding: 14px 20px; display: none;
+}
+.photo-counter.visible { display: block; }
+.photo-counter .count { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.8rem; font-weight: 800; color: var(--green); }
+.photo-counter .label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+
+/* Panel size control */
+.panel-size-ctrl {
+  display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 0.8rem;
+}
+.panel-size-ctrl input[type="range"] {
+  width: 80px; accent-color: var(--gold);
+}
+
+@media (max-width: 768px) {
+  .float-panel { width: calc(100% - 40px); right: 20px; top: auto; bottom: 20px; max-height: 45vh; }
+  .float-search { top: 80px; }
+  .float-back { top: 12px; left: 12px; padding: 8px 14px; font-size: 0.8rem; }
+  .mode-tabs { top: 12px; }
+  .photo-controls { flex-wrap: wrap; width: 90%; justify-content: center; }
+}
+</style>
+</head>
+<body style="overflow:hidden;">
+
+<!-- MODE TABS -->
+<div class="mode-tabs">
+  <button class="mode-tab active" onclick="switchMode('map')">🗺️ Mapa Satélite</button>
+  <button class="mode-tab" onclick="switchMode('photo')">📷 Upload Foto</button>
+</div>
+
+<!-- ══ PHOTO MODE ══ -->
+<div class="photo-wrap" id="photoMode">
+  <a href="dashboard.html" class="float-back" style="z-index:200;">← Dashboard</a>
+
+  <div class="photo-canvas-area" id="photoCanvas">
+    <!-- Upload zone (shown when no image) -->
+    <div class="photo-upload-zone" id="uploadZone" onclick="document.getElementById('photoInput').click()">
+      <div class="icon">📷</div>
+      <h3>Envie a foto do telhado</h3>
+      <p>Arraste a imagem aqui ou clique para selecionar<br>JPG, PNG — qualquer resolução</p>
+    </div>
+    <input type="file" id="photoInput" accept="image/*" style="display:none;" onchange="handlePhotoUpload(event)">
+  </div>
+
+  <!-- Panel counter -->
+  <div class="photo-counter" id="photoCounter">
+    <div class="count" id="panelCount">0</div>
+    <div class="label">painéis colocados</div>
+  </div>
+
+  <!-- Address + Config bar -->
+  <div id="photoConfigBar" style="display:none;position:absolute;top:70px;left:50%;transform:translateX(-50%);z-index:100;display:none;gap:8px;align-items:center;background:rgba(6,12,20,0.9);backdrop-filter:blur(20px);border:1px solid rgba(212,168,67,0.2);border-radius:14px;padding:10px 16px;box-shadow:0 8px 32px rgba(0,0,0,0.5);flex-wrap:wrap;max-width:90%;">
+    <input type="text" id="photoAddress" placeholder="Endereço, cidade, bairro..." style="flex:1;min-width:200px;padding:10px 14px;border-radius:10px;background:rgba(238,244,255,0.06);border:1px solid var(--border);color:var(--ice);font-family:'Inter',sans-serif;font-size:0.85rem;outline:none;">
+    <select id="photoUF" style="padding:10px 14px;border-radius:10px;background:#0A1628;border:1px solid var(--border);color:var(--ice);font-family:'Inter',sans-serif;font-size:0.85rem;outline:none;min-width:180px;">
+      <option value="" disabled>Selecione o estado</option>
+      <option value="AC">Acre (AC)</option>
+      <option value="AL">Alagoas (AL)</option>
+      <option value="AM">Amazonas (AM)</option>
+      <option value="AP">Amapá (AP)</option>
+      <option value="BA">Bahia (BA)</option>
+      <option value="CE">Ceará (CE)</option>
+      <option value="DF">Distrito Federal (DF)</option>
+      <option value="ES">Espírito Santo (ES)</option>
+      <option value="GO">Goiás (GO)</option>
+      <option value="MA">Maranhão (MA)</option>
+      <option value="MG">Minas Gerais (MG)</option>
+      <option value="MS" selected>Mato Grosso do Sul (MS)</option>
+      <option value="MT">Mato Grosso (MT)</option>
+      <option value="PA">Pará (PA)</option>
+      <option value="PB">Paraíba (PB)</option>
+      <option value="PE">Pernambuco (PE)</option>
+      <option value="PI">Piauí (PI)</option>
+      <option value="PR">Paraná (PR)</option>
+      <option value="RJ">Rio de Janeiro (RJ)</option>
+      <option value="RN">Rio Grande do Norte (RN)</option>
+      <option value="RO">Rondônia (RO)</option>
+      <option value="RR">Roraima (RR)</option>
+      <option value="RS">Rio Grande do Sul (RS)</option>
+      <option value="SC">Santa Catarina (SC)</option>
+      <option value="SE">Sergipe (SE)</option>
+      <option value="SP">São Paulo (SP)</option>
+      <option value="TO">Tocantins (TO)</option>
+    </select>
+    <select id="photoPanelType" style="padding:10px 14px;border-radius:10px;background:rgba(238,244,255,0.06);border:1px solid var(--border);color:var(--ice);font-family:'Inter',sans-serif;font-size:0.85rem;outline:none;">
+      <option value="mono-400">Mono 400W</option>
+      <option value="bi-450">Bifacial 450W</option>
+      <option value="poly-350">Poli 350W</option>
+    </select>
+  </div>
+
+  <!-- Controls -->
+  <div class="photo-controls" id="photoControls" style="display:none;">
+    <button class="photo-ctrl-btn photo-ctrl-add" onclick="enablePlacement()">☀️ Adicionar painel</button>
+    <div class="panel-size-ctrl">
+      <span>Tamanho:</span>
+      <input type="range" id="panelSizeSlider" min="30" max="120" value="60" oninput="updatePanelSize(this.value)">
+    </div>
+    <button class="photo-ctrl-btn photo-ctrl-clear" onclick="clearPhotoMode()">Limpar tudo</button>
+    <button class="photo-ctrl-btn photo-ctrl-upload" onclick="document.getElementById('photoInput').click()">Trocar foto</button>
+    <button class="photo-ctrl-btn" onclick="simularFoto()" style="background:linear-gradient(135deg,var(--gold-light),var(--gold));color:var(--midnight);">✅ Simular orçamento</button>
+  </div>
+
+  <!-- Photo results overlay -->
+  <div id="photoResults" style="display:none;position:absolute;top:60px;right:20px;z-index:100;width:320px;max-height:calc(100vh - 100px);overflow-y:auto;background:rgba(6,12,20,0.92);backdrop-filter:blur(20px);border:1px solid rgba(212,168,67,0.2);border-radius:16px;padding:20px;box-shadow:0 12px 40px rgba(0,0,0,0.5);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <h4 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:0.9rem;font-weight:700;color:var(--ice);margin:0;">📊 Orçamento</h4>
+      <button onclick="document.getElementById('photoResults').style.display='none'" style="background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;">✕</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;">
+      <div style="background:rgba(238,244,255,0.04);border:1px solid rgba(238,244,255,0.06);border-radius:10px;padding:10px;text-align:center;">
+        <div style="font-size:0.6rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);">Painéis</div>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.1rem;font-weight:800;color:var(--green);" id="prPanels">0</div>
+      </div>
+      <div style="background:rgba(238,244,255,0.04);border:1px solid rgba(238,244,255,0.06);border-radius:10px;padding:10px;text-align:center;">
+        <div style="font-size:0.6rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);">Potência</div>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.1rem;font-weight:800;color:var(--gold-light);" id="prPower">0</div>
+      </div>
+      <div style="background:rgba(238,244,255,0.04);border:1px solid rgba(238,244,255,0.06);border-radius:10px;padding:10px;text-align:center;">
+        <div style="font-size:0.6rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);">Geração/mês</div>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.1rem;font-weight:800;color:var(--green);" id="prGen">0</div>
+      </div>
+      <div style="background:rgba(238,244,255,0.04);border:1px solid rgba(238,244,255,0.06);border-radius:10px;padding:10px;text-align:center;">
+        <div style="font-size:0.6rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);">Economia/ano</div>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.1rem;font-weight:800;color:var(--gold-light);" id="prSavings">0</div>
+      </div>
+    </div>
+    <div style="background:rgba(31,216,164,0.06);border:1px solid rgba(31,216,164,0.2);border-radius:12px;padding:12px;margin-bottom:8px;">
+      <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--green);margin-bottom:6px;font-weight:600;">🏪 Fornecedor mais barato</div>
+      <div style="font-size:0.95rem;font-weight:700;color:var(--ice);" id="prFornecedor">—</div>
+      <div style="font-size:0.78rem;color:var(--muted);" id="prFornecedorInfo">—</div>
+      <div style="font-size:1.1rem;font-weight:800;color:var(--green);margin-top:4px;" id="prEquip">—</div>
+    </div>
+    <div style="background:rgba(212,168,67,0.06);border:1px solid rgba(212,168,67,0.2);border-radius:12px;padding:12px;margin-bottom:8px;">
+      <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--gold);margin-bottom:6px;font-weight:600;">🔧 Mão de obra</div>
+      <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--muted);margin-bottom:3px;"><span>Instalação</span><span style="color:var(--ice);font-weight:600;" id="prInst">—</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--muted);margin-bottom:3px;"><span>Estrutura</span><span style="color:var(--ice);font-weight:600;" id="prEstr">—</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--muted);margin-bottom:3px;"><span>Elétrica</span><span style="color:var(--ice);font-weight:600;" id="prElet">—</span></div>
+      <div style="display:flex;justify-content:space-between;border-top:1px solid rgba(212,168,67,0.2);padding-top:6px;margin-top:6px;font-size:0.85rem;"><span style="color:var(--gold);font-weight:600;">Total mão de obra</span><span style="color:var(--gold-light);font-weight:800;" id="prMaoTotal">—</span></div>
+    </div>
+    <div style="background:linear-gradient(135deg,rgba(212,168,67,0.12),rgba(31,216,164,0.08));border:1px solid rgba(212,168,67,0.3);border-radius:12px;padding:14px;text-align:center;margin-bottom:10px;">
+      <div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--gold);">Investimento total</div>
+      <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.5rem;font-weight:800;color:var(--ice);" id="prTotal">—</div>
+      <div style="font-size:0.75rem;color:var(--muted);" id="prPayback">—</div>
+    </div>
+    <button onclick="savePhotoSim()" style="width:100%;padding:11px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--gold-light),var(--gold));color:var(--midnight);font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.85rem;">💾 Salvar</button>
+    <div id="prSaveMsg" style="text-align:center;margin-top:6px;font-size:0.78rem;color:var(--green);display:none;"></div>
+  </div>
+</div>
+
+<!-- ══ MAP MODE ══ -->
+<div class="map-wrap" id="mapMode">
+  <div id="solarMap"></div>
+
+  <!-- Back button -->
+  <a href="dashboard.html" class="float-back">← Dashboard</a>
+
+  <!-- Search bar -->
+  <div class="float-search" style="top:80px;">
+    <input type="text" id="addressInput" placeholder="Digite o endereço do imóvel..." autocomplete="off">
+    <button onclick="searchAddress()">Buscar</button>
+  </div>
+
+  <!-- Floating control panel -->
+  <div class="float-panel">
+
+    <!-- Steps -->
+    <div class="fp-card">
+      <div class="fp-steps">
+        <div class="fp-step active" id="s1"><div class="fp-step-dot">1</div> Busque o endereço</div>
+        <div class="fp-step" id="s2"><div class="fp-step-dot">2</div> Desenhe o telhado no mapa</div>
+        <div class="fp-step" id="s3"><div class="fp-step-dot">3</div> Clique "Colocar painéis"</div>
+      </div>
+    </div>
+
+    <!-- Config -->
+    <div class="fp-card">
+      <h4>⚙️ Configuração</h4>
+      <div class="fp-field">
+        <label>Painel</label>
+        <select id="panelType">
+          <option value="mono-400">Monocristalino 400W</option>
+          <option value="bi-450">Bifacial 450W</option>
+          <option value="poly-350">Policristalino 350W</option>
+        </select>
+      </div>
+      <div class="fp-field">
+        <label>Conta mensal (R$)</label>
+        <input type="number" id="monthlyBill" value="500" min="100" max="50000">
+      </div>
+      <div class="fp-field">
+        <label>Cidade / Estado</label>
+        <input type="text" id="cityState" placeholder="Auto-detectado ao buscar" readonly style="opacity:0.7;cursor:default;">
+        <input type="hidden" id="stateUF" value="SP">
+      </div>
+      <div class="fp-actions">
+        <button class="fp-btn fp-btn-go" id="btnPlace" onclick="placePanels()" disabled>☀️ Colocar painéis</button>
+        <button class="fp-btn fp-btn-clear" onclick="clearAll()">✕</button>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div class="fp-card fp-results" id="simResults">
+      <h4>📊 Resultado</h4>
+      <div class="res-grid">
+        <div class="res-item"><div class="rl">Área</div><div class="rv gold" id="resArea">—</div></div>
+        <div class="res-item"><div class="rl">Painéis</div><div class="rv green" id="resPanels">—</div></div>
+        <div class="res-item"><div class="rl">Potência</div><div class="rv gold" id="resPower">—</div></div>
+        <div class="res-item"><div class="rl">Geração/mês</div><div class="rv green" id="resGen">—</div></div>
+        <div class="res-item"><div class="rl">Economia/ano</div><div class="rv gold" id="resSavings">—</div></div>
+        <div class="res-item"><div class="rl">Payback</div><div class="rv blue" id="resPayback">—</div></div>
+        <div class="res-item"><div class="rl">Investimento</div><div class="rv gold" id="resInvest">—</div></div>
+        <div class="res-item"><div class="rl">CO₂/ano</div><div class="rv green" id="resCO2">—</div></div>
+      </div>
+      <button class="fp-btn-save" onclick="saveCurrentSim()">💾 Salvar simulação</button>
+      <div id="saveMsg" style="text-align:center;margin-top:8px;font-size:0.82rem;color:var(--green);display:none;"></div>
+    </div>
+  </div>
+
+  <!-- Panel placement button -->
+  <div class="panel-placer" id="panelPlacer">
+    <button class="pp-btn" onclick="togglePanelMode()" id="ppBtn" title="Adicionar painéis solares">
+      <span class="pp-icon">☀️</span>
+      <span class="pp-text">Adicionar Painel</span>
+    </button>
+    <div class="pp-info" id="ppInfo" style="display:none;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <span style="font-size:1.4rem;font-weight:800;color:var(--green);" id="ppCount">0</span>
+        <span style="font-size:0.75rem;color:var(--muted);">painéis</span>
+      </div>
+      <div style="margin-bottom:8px;">
+        <label style="font-size:0.7rem;color:var(--muted);display:block;margin-bottom:3px;">Rotação</label>
+        <input type="range" id="ppRotation" min="0" max="360" value="0" style="width:100%;accent-color:var(--gold);" oninput="updateSelectedRotation(this.value)">
+        <div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--muted);"><span>0°</span><span id="ppRotVal">0°</span><span>360°</span></div>
+      </div>
+      <div style="margin-bottom:8px;">
+        <label style="font-size:0.7rem;color:var(--muted);display:block;margin-bottom:3px;">Tamanho</label>
+        <input type="range" id="ppSize" min="20" max="80" value="40" style="width:100%;accent-color:var(--gold);" oninput="updatePanelPlacerSize(this.value)">
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:10px;">
+        <button class="pp-mini-btn pp-undo" onclick="undoLastPanel()" title="Desfazer último">↩</button>
+        <button class="pp-mini-btn pp-clear" onclick="clearPlacedPanels()" title="Limpar todos">🗑️</button>
+      </div>
+      <button onclick="simularPaineis()" style="width:100%;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--gold-light),var(--gold));color:var(--midnight);font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.9rem;transition:var(--transition);box-shadow:0 4px 16px rgba(212,168,67,0.3);" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform=''">
+        ✅ Simular orçamento
+      </button>
+    </div>
+
+    <!-- Simulation results card -->
+    <div class="pp-info" id="ppResults" style="display:none;">
+      <h4 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:0.9rem;font-weight:700;color:var(--ice);margin-bottom:12px;">📊 Orçamento estimado</h4>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;">
+        <div style="background:rgba(238,244,255,0.04);border:1px solid rgba(238,244,255,0.06);border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:0.62rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:2px;">Painéis</div>
+          <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.1rem;font-weight:800;color:var(--green);" id="orPanels">0</div>
+        </div>
+        <div style="background:rgba(238,244,255,0.04);border:1px solid rgba(238,244,255,0.06);border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:0.62rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:2px;">Potência</div>
+          <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.1rem;font-weight:800;color:var(--gold-light);" id="orPower">0 kWp</div>
+        </div>
+        <div style="background:rgba(238,244,255,0.04);border:1px solid rgba(238,244,255,0.06);border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:0.62rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:2px;">Geração/mês</div>
+          <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.1rem;font-weight:800;color:var(--green);" id="orGen">0 kWh</div>
+        </div>
+        <div style="background:rgba(238,244,255,0.04);border:1px solid rgba(238,244,255,0.06);border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:0.62rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:2px;">Economia/ano</div>
+          <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.1rem;font-weight:800;color:var(--gold-light);" id="orSavings">R$ 0</div>
+        </div>
+      </div>
+
+      <!-- Fornecedor mais barato -->
+      <div style="background:rgba(31,216,164,0.06);border:1px solid rgba(31,216,164,0.2);border-radius:12px;padding:14px;margin-bottom:10px;">
+        <div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--green);margin-bottom:8px;font-weight:600;">🏪 Fornecedor mais barato da região</div>
+        <div style="font-size:1rem;font-weight:700;color:var(--ice);margin-bottom:4px;" id="orFornecedor">—</div>
+        <div style="font-size:0.8rem;color:var(--muted);" id="orFornecedorInfo">—</div>
+        <div style="font-size:1.2rem;font-weight:800;color:var(--green);margin-top:6px;" id="orFornecedorPreco">—</div>
+      </div>
+
+      <!-- Mão de obra -->
+      <div style="background:rgba(212,168,67,0.06);border:1px solid rgba(212,168,67,0.2);border-radius:12px;padding:14px;margin-bottom:10px;">
+        <div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--gold);margin-bottom:8px;font-weight:600;">🔧 Mão de obra estimada</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span style="font-size:0.82rem;color:var(--muted);">Instalação</span>
+          <span style="font-size:0.92rem;font-weight:700;color:var(--ice);" id="orMaoObra">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span style="font-size:0.82rem;color:var(--muted);">Estrutura de fixação</span>
+          <span style="font-size:0.92rem;font-weight:700;color:var(--ice);" id="orEstrutura">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span style="font-size:0.82rem;color:var(--muted);">Parte elétrica</span>
+          <span style="font-size:0.92rem;font-weight:700;color:var(--ice);" id="orEletrica">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid rgba(212,168,67,0.2);padding-top:8px;margin-top:8px;">
+          <span style="font-size:0.85rem;font-weight:600;color:var(--gold);">Total mão de obra</span>
+          <span style="font-size:1rem;font-weight:800;color:var(--gold-light);" id="orMaoObraTotal">—</span>
+        </div>
+      </div>
+
+      <!-- Total geral -->
+      <div style="background:linear-gradient(135deg,rgba(212,168,67,0.12),rgba(31,216,164,0.08));border:1px solid rgba(212,168,67,0.3);border-radius:12px;padding:16px;text-align:center;">
+        <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--gold);margin-bottom:4px;">Investimento total estimado</div>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.6rem;font-weight:800;color:var(--ice);" id="orTotal">—</div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-top:4px;" id="orPayback">—</div>
+      </div>
+
+      <button onclick="saveManualSim()" style="width:100%;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--gold-light),var(--gold));color:var(--midnight);font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.88rem;margin-top:10px;">💾 Salvar simulação</button>
+      <div id="ppSaveMsg" style="text-align:center;margin-top:6px;font-size:0.8rem;color:var(--green);display:none;"></div>
+    </div>
+  </div>
+
+  <!-- Draw hint (hidden, replaced by panel placer) -->
+
+  <!-- Map badge -->
+  <div class="map-badge"><div class="live"></div> Imagem de satélite · Zoom: <span id="zoomLevel">19</span></div>
+</div>
+
+<!-- Scripts -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/guard.js"></script>
+<script>
+// ══════════════════════════════════════
+// MAP
+// ══════════════════════════════════════
+const map = L.map('solarMap', { center: [-23.5505, -46.6333], zoom: 19, maxZoom: 22, zoomControl: false });
+
+L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+// Google Satellite + Labels (hybrid) — high-res, updated imagery, zoom 21 native
+L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+  attribution: '', maxZoom: 22, maxNativeZoom: 21,
+  detectRetina: true, tileSize: 256
+}).addTo(map);
+
+map.on('zoomend', () => document.getElementById('zoomLevel').textContent = map.getZoom());
+
+// ══════════════════════════════════════
+// DRAW TOOLS
+// ══════════════════════════════════════
+const drawnItems = new L.FeatureGroup();
+map.addLayer(drawnItems);
+
+const drawControl = new L.Control.Draw({
+  position: 'topleft',
+  draw: {
+    polygon: { allowIntersection: false, shapeOptions: { color: '#D4A843', weight: 2, fillColor: '#F0C96B', fillOpacity: 0.3 } },
+    rectangle: { shapeOptions: { color: '#D4A843', weight: 2, fillColor: '#F0C96B', fillOpacity: 0.3 } },
+    polyline: false, circle: false, circlemarker: false, marker: false
+  },
+  edit: { featureGroup: drawnItems, remove: true }
+});
+map.addControl(drawControl);
+
+let roofPolygon = null, panelMarkers = [], roofAreaM2 = 0, currentSimData = null;
+
+// Hide draw hint when drawing starts
+map.on('draw:drawstart', function() {
+  const hint = document.getElementById('drawHint');
+  if (hint) hint.style.display = 'none';
+});
+
+map.on(L.Draw.Event.CREATED, function(e) {
+  drawnItems.clearLayers();
+  panelMarkers.forEach(m => map.removeLayer(m));
+  panelMarkers = [];
+  roofPolygon = e.layer;
+  drawnItems.addLayer(roofPolygon);
+  roofAreaM2 = calcArea(roofPolygon);
+  setStep(2);
+  document.getElementById('btnPlace').disabled = false;
+  document.getElementById('simResults').classList.remove('visible');
+});
+
+map.on(L.Draw.Event.DELETED, function() {
+  roofPolygon = null; roofAreaM2 = 0;
+  document.getElementById('btnPlace').disabled = true;
+  setStep(1); clearPanels();
+});
+
+function setStep(n) {
+  ['s1','s2','s3'].forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (i < n) el.className = 'fp-step done';
+    else if (i === n) el.className = 'fp-step active';
+    else el.className = 'fp-step';
+  });
+}
+
+function calcArea(layer) {
+  const ll = layer.getLatLngs()[0];
+  if (!ll || ll.length < 3) return 0;
+  let a = 0;
+  for (let i = 0; i < ll.length; i++) {
+    const j = (i + 1) % ll.length;
+    const xi = ll[i].lng * 111320 * Math.cos(ll[i].lat * Math.PI / 180);
+    const yi = ll[i].lat * 110540;
+    const xj = ll[j].lng * 111320 * Math.cos(ll[j].lat * Math.PI / 180);
+    const yj = ll[j].lat * 110540;
+    a += xi * yj - xj * yi;
+  }
+  return Math.abs(a / 2);
+}
+
+// ══════════════════════════════════════
+// SEARCH
+// ══════════════════════════════════════
+const STATE_MAP = {
+  'são paulo':'SP','rio de janeiro':'RJ','minas gerais':'MG','bahia':'BA','ceará':'CE',
+  'pernambuco':'PE','paraná':'PR','rio grande do sul':'RS','santa catarina':'SC','goiás':'GO',
+  'distrito federal':'DF','pará':'PA','amazonas':'AM','mato grosso':'MT','mato grosso do sul':'MS',
+  'espírito santo':'ES','maranhão':'MA','piauí':'PI','rio grande do norte':'RN','paraíba':'PB',
+  'alagoas':'AL','sergipe':'SE','tocantins':'TO','rondônia':'RO','acre':'AC','amapá':'AP','roraima':'RR'
+};
+
+async function searchAddress() {
+  const addr = document.getElementById('addressInput').value.trim();
+  if (!addr) return;
+  const btn = document.querySelector('.float-search button');
+  btn.textContent = '...'; btn.disabled = true;
+  try {
+    const r = await fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(addr) + '&countrycodes=br&limit=1&addressdetails=1');
+    const d = await r.json();
+    if (d.length > 0) {
+      const lat = parseFloat(d[0].lat), lon = parseFloat(d[0].lon);
+      map.setView([lat, lon], 19);
+      L.marker([lat, lon], {
+        icon: L.divIcon({ className:'', html:'<div style="width:16px;height:16px;background:#D4A843;border-radius:50%;border:3px solid #fff;box-shadow:0 0 16px rgba(212,168,67,0.7);"></div>', iconSize:[16,16], iconAnchor:[8,8] })
+      }).addTo(map);
+
+      // Auto-detect state and city
+      const a = d[0].address || {};
+      const city = a.city || a.town || a.village || a.municipality || a.county || '';
+      const state = a.state || '';
+      const uf = STATE_MAP[state.toLowerCase()] || 'SP';
+      document.getElementById('stateUF').value = uf;
+      document.getElementById('cityState').value = city + (city && state ? ' — ' : '') + state + ' (' + uf + ')';
+
+      setStep(1);
+    } else { alert('Endereço não encontrado. Tente com mais detalhes (ex: Rua X, 123, Cidade, Estado).'); }
+  } catch(e) { alert('Erro: ' + e.message); }
+  btn.textContent = 'Buscar'; btn.disabled = false;
+}
+document.getElementById('addressInput').addEventListener('keypress', e => { if (e.key === 'Enter') searchAddress(); });
+
+// ══════════════════════════════════════
+// PANELS
+// ══════════════════════════════════════
+const PD = {
+  'mono-400': { w:400, pw:1.04, ph:2.1, price:850 },
+  'bi-450': { w:450, pw:1.04, ph:2.1, price:1100 },
+  'poly-350': { w:350, pw:0.99, ph:1.96, price:650 }
+};
+const IRR = {SP:4.5,RJ:4.6,MG:5.0,BA:5.4,CE:5.5,PE:5.3,PR:4.4,RS:4.2,SC:4.3,GO:5.2,DF:5.1,PA:4.8,MT:5.1,MS:5.0,ES:4.7,MA:5.3,PI:5.6,RN:5.7,PB:5.5,AL:5.4,SE:5.3,TO:5.2};
+const TAR = {SP:0.78,RJ:0.82,MG:0.80,BA:0.76,CE:0.74,PE:0.77,PR:0.75,RS:0.79,SC:0.76,GO:0.73,DF:0.72,PA:0.80,MT:0.78,MS:0.76,ES:0.78,MA:0.72,PI:0.70,RN:0.74,PB:0.73,AL:0.76,SE:0.75,TO:0.74};
+
+function placePanels() {
+  if (!roofPolygon) return;
+  clearPanels();
+  const p = PD[document.getElementById('panelType').value];
+  const bounds = roofPolygon.getBounds();
+  const ll = roofPolygon.getLatLngs()[0];
+  const cLat = bounds.getCenter().lat;
+  const dLat = (p.ph + 0.15) / 110540;
+  const dLng = (p.pw + 0.05) / (111320 * Math.cos(cLat * Math.PI / 180));
+  let count = 0;
+
+  for (let lat = bounds.getSouth() + dLat/2; lat < bounds.getNorth(); lat += dLat) {
+    for (let lng = bounds.getWest() + dLng/2; lng < bounds.getEast(); lng += dLng) {
+      if (pip([lat, lng], ll)) {
+        panelMarkers.push(L.rectangle(
+          [[lat - dLat*0.42, lng - dLng*0.42], [lat + dLat*0.42, lng + dLng*0.42]],
+          { color:'#1FD8A4', weight:0.8, fillColor:'#0A1E35', fillOpacity:0.75, interactive:false }
+        ).addTo(map));
+        count++;
+      }
+    }
+  }
+
+  const uf = document.getElementById('stateUF').value;
+  const irr = IRR[uf]||4.8, tar = TAR[uf]||0.78;
+  const kWp = (count * p.w) / 1000;
+  const gen = kWp * irr * 30 * 0.78;
+  const sav = gen * 12 * tar;
+  const inv = count * p.price + kWp * 800;
+  const pay = sav > 0 ? inv / sav : 0;
+  const co2 = (gen * 12 * 0.075) / 1000;
+  const fmt = n => n.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+  document.getElementById('resArea').textContent = roofAreaM2.toFixed(0) + ' m²';
+  document.getElementById('resPanels').textContent = count;
+  document.getElementById('resPower').textContent = kWp.toFixed(1) + ' kWp';
+  document.getElementById('resGen').textContent = fmt(gen) + ' kWh';
+  document.getElementById('resSavings').textContent = 'R$ ' + fmt(sav);
+  document.getElementById('resPayback').textContent = pay.toFixed(1) + ' anos';
+  document.getElementById('resInvest').textContent = 'R$ ' + fmt(inv);
+  document.getElementById('resCO2').textContent = co2.toFixed(2) + ' t';
+  document.getElementById('simResults').classList.add('visible');
+  setStep(3);
+
+  currentSimData = { address: document.getElementById('addressInput').value||'Mapa', panels:count, monthlyKwh:gen, annualSavings:sav, investment:inv, paybackYears:pay, region:uf };
+}
+
+function pip(pt, poly) {
+  let inside = false;
+  for (let i = 0, j = poly.length-1; i < poly.length; j = i++) {
+    const yi = poly[i].lng, xi = poly[i].lat, yj = poly[j].lng, xj = poly[j].lat;
+    if (((yi > pt[1]) !== (yj > pt[1])) && (pt[0] < (xj-xi)*(pt[1]-yi)/(yj-yi)+xi)) inside = !inside;
+  }
+  return inside;
+}
+
+function clearPanels() { panelMarkers.forEach(m => map.removeLayer(m)); panelMarkers = []; document.getElementById('simResults').classList.remove('visible'); currentSimData = null; }
+function clearAll() { drawnItems.clearLayers(); clearPanels(); roofPolygon = null; roofAreaM2 = 0; document.getElementById('btnPlace').disabled = true; setStep(0); }
+
+// ══════════════════════════════════════
+// SAVE
+// ══════════════════════════════════════
+async function saveCurrentSim() {
+  if (!currentSimData) return;
+  try {
+    await saveSimulation(currentSimData);
+    const m = document.getElementById('saveMsg');
+    m.textContent = '✓ Salvo!'; m.style.display = 'block';
+    setTimeout(() => m.style.display = 'none', 3000);
+  } catch(e) { alert('Erro: ' + e.message); }
+}
+
+// ══════════════════════════════════════
+// INTERACTIVE PANEL PLACEMENT
+// ══════════════════════════════════════
+let panelPlaceMode = false;
+let placedPanels = [];
+let selectedPanel = null;
+let ppSize = 40;
+let ppRotation = 0;
+
+function togglePanelMode() {
+  panelPlaceMode = !panelPlaceMode;
+  const btn = document.getElementById('ppBtn');
+  const info = document.getElementById('ppInfo');
+  btn.classList.toggle('active', panelPlaceMode);
+  info.style.display = panelPlaceMode ? 'block' : 'none';
+  document.getElementById('solarMap').style.cursor = panelPlaceMode ? 'crosshair' : '';
+  // Hide draw hint
+  const hint = document.getElementById('drawHint');
+  if (hint) hint.style.display = 'none';
+}
+
+function createMapPanel(latlng) {
+  const size = ppSize;
+  const w = size; const h = size * 0.6;
+  const rot = ppRotation;
+
+  const svgHtml = `
+    <div class="map-panel-marker" style="transform:rotate(${rot}deg);width:${w}px;height:${h}px;" data-rotation="${rot}">
+      <svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" class="panel-svg">
+        <defs>
+          <linearGradient id="pg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#1a3a6c"/>
+            <stop offset="100%" stop-color="#0e2545"/>
+          </linearGradient>
+        </defs>
+        <rect width="${w}" height="${h}" rx="2" fill="url(#pg)" stroke="#1FD8A4" stroke-width="1.2" opacity="0.88"/>
+        <line x1="${w*0.5}" y1="0" x2="${w*0.5}" y2="${h}" stroke="#1FD8A4" stroke-width="0.5" opacity="0.4"/>
+        <line x1="0" y1="${h*0.33}" x2="${w}" y2="${h*0.33}" stroke="#1FD8A4" stroke-width="0.5" opacity="0.4"/>
+        <line x1="0" y1="${h*0.66}" x2="${w}" y2="${h*0.66}" stroke="#1FD8A4" stroke-width="0.5" opacity="0.4"/>
+      </svg>
+    </div>
+  `;
+
+  const icon = L.divIcon({
+    className: '',
+    html: svgHtml,
+    iconSize: [w, h],
+    iconAnchor: [w/2, h/2]
+  });
+
+  const marker = L.marker(latlng, {
+    icon: icon,
+    draggable: true,
+    zIndexOffset: 1000
+  }).addTo(map);
+
+  // Click to select
+  marker.on('click', function(e) {
+    L.DomEvent.stopPropagation(e);
+    selectMapPanel(marker);
+  });
+
+  // Double-click to rotate 15°
+  marker.on('dblclick', function(e) {
+    L.DomEvent.stopPropagation(e);
+    const el = marker.getElement().querySelector('.map-panel-marker');
+    let r = parseInt(el.dataset.rotation || 0) + 15;
+    if (r >= 360) r -= 360;
+    el.style.transform = 'rotate(' + r + 'deg)';
+    el.dataset.rotation = r;
+    document.getElementById('ppRotation').value = r;
+    document.getElementById('ppRotVal').textContent = r + '°';
+  });
+
+  placedPanels.push(marker);
+  updatePlacedCount();
+  return marker;
+}
+
+function selectMapPanel(marker) {
+  // Deselect previous
+  if (selectedPanel) {
+    const prev = selectedPanel.getElement();
+    if (prev) prev.querySelector('.map-panel-marker')?.classList.remove('selected');
+  }
+  selectedPanel = marker;
+  const el = marker.getElement().querySelector('.map-panel-marker');
+  el.classList.add('selected');
+  const rot = parseInt(el.dataset.rotation || 0);
+  document.getElementById('ppRotation').value = rot;
+  document.getElementById('ppRotVal').textContent = rot + '°';
+}
+
+function updateSelectedRotation(val) {
+  document.getElementById('ppRotVal').textContent = val + '°';
+  ppRotation = parseInt(val);
+  if (selectedPanel) {
+    const el = selectedPanel.getElement().querySelector('.map-panel-marker');
+    el.style.transform = 'rotate(' + val + 'deg)';
+    el.dataset.rotation = val;
+  }
+}
+
+function updatePanelPlacerSize(val) {
+  ppSize = parseInt(val);
+}
+
+function undoLastPanel() {
+  if (placedPanels.length === 0) return;
+  const last = placedPanels.pop();
+  map.removeLayer(last);
+  if (selectedPanel === last) selectedPanel = null;
+  updatePlacedCount();
+}
+
+function clearPlacedPanels() {
+  placedPanels.forEach(m => map.removeLayer(m));
+  placedPanels = [];
+  selectedPanel = null;
+  updatePlacedCount();
+}
+
+function updatePlacedCount() {
+  document.getElementById('ppCount').textContent = placedPanels.length;
+}
+
+// Click on map to place panel
+map.on('click', function(e) {
+  if (!panelPlaceMode) return;
+  createMapPanel(e.latlng);
+});
+
+// ══════════════════════════════════════
+// FORNECEDORES REGIONAIS (banco simulado)
+// ══════════════════════════════════════
+const FORNECEDORES = {
+  SP: [
+    { nome:'SunTech Solar SP', cidade:'São Paulo', preco_wp:2.85, nota:4.8 },
+    { nome:'EcoSolar Campinas', cidade:'Campinas', preco_wp:2.92, nota:4.6 },
+    { nome:'Solar Prime SP', cidade:'Guarulhos', preco_wp:3.05, nota:4.7 },
+  ],
+  RJ: [
+    { nome:'Rio Solar Energia', cidade:'Rio de Janeiro', preco_wp:3.10, nota:4.5 },
+    { nome:'Carioca Solar', cidade:'Niterói', preco_wp:2.95, nota:4.7 },
+  ],
+  MG: [
+    { nome:'Minas Solar BH', cidade:'Belo Horizonte', preco_wp:2.80, nota:4.8 },
+    { nome:'Solar Triângulo', cidade:'Uberlândia', preco_wp:2.75, nota:4.6 },
+  ],
+  BA: [
+    { nome:'Bahia Sol Energia', cidade:'Salvador', preco_wp:2.90, nota:4.5 },
+    { nome:'NordeSolar', cidade:'Feira de Santana', preco_wp:2.70, nota:4.4 },
+  ],
+  CE: [
+    { nome:'Ceará Solar', cidade:'Fortaleza', preco_wp:2.65, nota:4.7 },
+    { nome:'SolNorte Energia', cidade:'Juazeiro do Norte', preco_wp:2.60, nota:4.3 },
+  ],
+  PE: [
+    { nome:'Recife Solar', cidade:'Recife', preco_wp:2.88, nota:4.6 },
+  ],
+  PR: [
+    { nome:'Paraná Solar', cidade:'Curitiba', preco_wp:2.95, nota:4.7 },
+    { nome:'Solar Sul PR', cidade:'Londrina', preco_wp:2.85, nota:4.5 },
+  ],
+  RS: [
+    { nome:'Gaúcha Solar', cidade:'Porto Alegre', preco_wp:3.00, nota:4.6 },
+    { nome:'Solar Serra RS', cidade:'Caxias do Sul', preco_wp:2.90, nota:4.4 },
+  ],
+  SC: [
+    { nome:'Catarina Solar', cidade:'Florianópolis', preco_wp:2.92, nota:4.7 },
+  ],
+  GO: [
+    { nome:'Goiás Solar', cidade:'Goiânia', preco_wp:2.78, nota:4.5 },
+  ],
+  DF: [
+    { nome:'BSB Solar', cidade:'Brasília', preco_wp:2.85, nota:4.8 },
+  ],
+  PA: [
+    { nome:'Amazônia Solar', cidade:'Belém', preco_wp:3.15, nota:4.3 },
+  ],
+  MT: [
+    { nome:'MT Solar', cidade:'Cuiabá', preco_wp:2.82, nota:4.4 },
+  ],
+  MS: [
+    { nome:'MS Solar', cidade:'Campo Grande', preco_wp:2.88, nota:4.5 },
+  ],
+  ES: [
+    { nome:'Capixaba Solar', cidade:'Vitória', preco_wp:2.90, nota:4.6 },
+  ],
+};
+
+// Default para estados sem fornecedor cadastrado
+const FORNECEDOR_DEFAULT = { nome:'Solar Brasil Nacional', cidade:'Região', preco_wp:3.00, nota:4.3 };
+
+// Mão de obra por kWp
+const MAO_OBRA = {
+  instalacao_kwp: 650,    // R$/kWp
+  estrutura_kwp: 380,     // R$/kWp
+  eletrica_kwp: 280,      // R$/kWp
+};
+
+function simularPaineis() {
+  const count = placedPanels.length;
+  if (count === 0) { alert('Coloque pelo menos 1 painel no telhado!'); return; }
+
+  const panelType = document.getElementById('panelType').value;
+  const p = PD[panelType];
+  const uf = document.getElementById('stateUF').value || 'SP';
+  const irr = IRR[uf] || 4.8;
+  const tar = TAR[uf] || 0.78;
+  const bill = parseFloat(document.getElementById('monthlyBill').value) || 500;
+
+  const kWp = (count * p.w) / 1000;
+  const gen = kWp * irr * 30 * 0.78;
+  const sav = gen * 12 * tar;
+  const fmt = n => 'R$ ' + n.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+  // Fornecedor mais barato
+  const fornecedores = FORNECEDORES[uf] || [FORNECEDOR_DEFAULT];
+  const melhor = fornecedores.reduce((a, b) => a.preco_wp < b.preco_wp ? a : b);
+  const custoEquip = kWp * 1000 * melhor.preco_wp;
+
+  // Mão de obra
+  const instalacao = kWp * MAO_OBRA.instalacao_kwp;
+  const estrutura = kWp * MAO_OBRA.estrutura_kwp;
+  const eletrica = kWp * MAO_OBRA.eletrica_kwp;
+  const totalMaoObra = instalacao + estrutura + eletrica;
+
+  const totalGeral = custoEquip + totalMaoObra;
+  const payback = sav > 0 ? totalGeral / sav : 0;
+
+  // Preencher resultados
+  document.getElementById('orPanels').textContent = count;
+  document.getElementById('orPower').textContent = kWp.toFixed(1) + ' kWp';
+  document.getElementById('orGen').textContent = gen.toFixed(0) + ' kWh';
+  document.getElementById('orSavings').textContent = fmt(sav);
+
+  document.getElementById('orFornecedor').textContent = melhor.nome;
+  document.getElementById('orFornecedorInfo').textContent = melhor.cidade + ' · ⭐ ' + melhor.nota + ' · R$ ' + melhor.preco_wp.toFixed(2) + '/Wp';
+  document.getElementById('orFornecedorPreco').textContent = 'Equipamento: ' + fmt(custoEquip);
+
+  document.getElementById('orMaoObra').textContent = fmt(instalacao);
+  document.getElementById('orEstrutura').textContent = fmt(estrutura);
+  document.getElementById('orEletrica').textContent = fmt(eletrica);
+  document.getElementById('orMaoObraTotal').textContent = fmt(totalMaoObra);
+
+  document.getElementById('orTotal').textContent = fmt(totalGeral);
+  document.getElementById('orPayback').textContent = 'Payback estimado: ' + payback.toFixed(1) + ' anos';
+
+  document.getElementById('ppResults').style.display = 'block';
+
+  // Save data for later
+  currentSimData = {
+    address: document.getElementById('addressInput').value || document.getElementById('cityState').value || 'Mapa',
+    panels: count, monthlyKwh: gen, annualSavings: sav,
+    investment: totalGeral, paybackYears: payback, region: uf
+  };
+}
+
+async function saveManualSim() {
+  if (!currentSimData) return;
+  try {
+    await saveSimulation(currentSimData);
+    const m = document.getElementById('ppSaveMsg');
+    m.textContent = '✓ Simulação salva!'; m.style.display = 'block';
+    setTimeout(() => m.style.display = 'none', 3000);
+  } catch(e) { alert('Erro: ' + e.message); }
+}
+
+// ══════════════════════════════════════
+// MODE SWITCHER
+// ══════════════════════════════════════
+function switchMode(mode) {
+  document.querySelectorAll('.mode-tab').forEach((t, i) => {
+    t.classList.toggle('active', (mode === 'map' && i === 0) || (mode === 'photo' && i === 1));
+  });
+  document.getElementById('mapMode').style.display = mode === 'map' ? 'block' : 'none';
+  document.getElementById('photoMode').classList.toggle('active', mode === 'photo');
+  if (mode === 'map') { map.invalidateSize(); }
+}
+
+// ══════════════════════════════════════
+// PHOTO MODE — Upload + 3D Panels
+// ══════════════════════════════════════
+let photoImage = null;
+let placementMode = false;
+let panelSize = 60;
+let photoPanels = [];
+
+function handlePhotoUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    const canvas = document.getElementById('photoCanvas');
+    // Remove upload zone
+    document.getElementById('uploadZone').style.display = 'none';
+    // Remove old image
+    const oldImg = canvas.querySelector('img');
+    if (oldImg) oldImg.remove();
+    // Clear old panels
+    clearPhotoMode();
+    // Create image
+    const img = document.createElement('img');
+    img.src = ev.target.result;
+    img.id = 'roofPhoto';
+    img.draggable = false;
+    canvas.insertBefore(img, canvas.firstChild);
+    photoImage = img;
+    // Show controls + config bar
+    document.getElementById('photoControls').style.display = 'flex';
+    document.getElementById('photoConfigBar').style.display = 'flex';
+    document.getElementById('photoCounter').classList.add('visible');
+    // Enable click to place
+    enablePlacement();
+  };
+  reader.readAsDataURL(file);
+}
+
+// Drag & drop support
+const photoCanvas = document.getElementById('photoCanvas');
+photoCanvas.addEventListener('dragover', e => { e.preventDefault(); e.stopPropagation(); });
+photoCanvas.addEventListener('drop', e => {
+  e.preventDefault(); e.stopPropagation();
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) {
+    document.getElementById('photoInput').files = e.dataTransfer.files;
+    handlePhotoUpload({ target: { files: [file] } });
+  }
+});
+
+function enablePlacement() {
+  placementMode = true;
+  document.getElementById('photoCanvas').style.cursor = 'crosshair';
+}
+
+photoCanvas.addEventListener('click', function(e) {
+  if (!placementMode || !photoImage) return;
+  if (e.target.closest('.solar-panel-3d') || e.target.closest('.del-btn') || e.target.closest('.photo-upload-zone')) return;
+
+  const rect = photoCanvas.getBoundingClientRect();
+  const x = e.clientX - rect.left - panelSize / 2;
+  const y = e.clientY - rect.top - panelSize / 2;
+
+  createPanel3D(x, y);
+});
+
+function createPanel3D(x, y) {
+  const panel = document.createElement('div');
+  panel.className = 'solar-panel-3d';
+  panel.style.left = x + 'px';
+  panel.style.top = y + 'px';
+  panel.style.width = panelSize + 'px';
+  panel.style.height = (panelSize * 0.65) + 'px';
+  panel.dataset.rotation = '0';
+
+  panel.innerHTML = `
+    <div class="panel-shadow"></div>
+    <div class="panel-face">
+      <div class="cell"></div><div class="cell"></div>
+      <div class="cell"></div><div class="cell"></div>
+      <div class="cell"></div><div class="cell"></div>
+    </div>
+    <button class="del-btn" onclick="removePanel(this)">✕</button>
+    <div class="rotate-ring"></div>
+    <div class="rotate-handle"></div>
+    <div class="rotation-label">0°</div>
+  `;
+
+  // ── DRAG to move ──
+  let isDragging = false, startX, startY, origX, origY;
+  panel.addEventListener('mousedown', function(e) {
+    if (e.target.closest('.del-btn') || e.target.closest('.rotate-handle')) return;
+    isDragging = true;
+    startX = e.clientX; startY = e.clientY;
+    origX = parseInt(panel.style.left); origY = parseInt(panel.style.top);
+    panel.style.cursor = 'grabbing'; panel.style.zIndex = 50;
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', function(e) {
+    if (!isDragging) return;
+    panel.style.left = (origX + e.clientX - startX) + 'px';
+    panel.style.top = (origY + e.clientY - startY) + 'px';
+  });
+  document.addEventListener('mouseup', function() {
+    if (isDragging) { isDragging = false; panel.style.cursor = 'grab'; panel.style.zIndex = 10; }
+  });
+
+  // ── ROTATE handle ──
+  const rotHandle = panel.querySelector('.rotate-handle');
+  const rotLabel = panel.querySelector('.rotation-label');
+  let isRotating = false;
+
+  rotHandle.addEventListener('mousedown', function(e) {
+    isRotating = true; e.preventDefault(); e.stopPropagation();
+    rotHandle.style.cursor = 'grabbing';
+    panel.classList.add('rotating');
+  });
+
+  document.addEventListener('mousemove', function(e) {
+    if (!isRotating) return;
+    const rect = panel.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    let angle = Math.atan2(e.clientY - cy, e.clientX - cx) * (180 / Math.PI) + 90;
+    if (angle < 0) angle += 360;
+    angle = Math.round(angle);
+    panel.style.transform = 'rotate(' + angle + 'deg)';
+    panel.dataset.rotation = angle;
+    rotLabel.textContent = angle + '°';
+  });
+
+  document.addEventListener('mouseup', function() {
+    if (isRotating) {
+      isRotating = false;
+      rotHandle.style.cursor = 'grab';
+      panel.classList.remove('rotating');
+    }
+  });
+
+  // ── Touch: drag ──
+  panel.addEventListener('touchstart', function(e) {
+    if (e.target.closest('.del-btn') || e.target.closest('.rotate-handle')) return;
+    isDragging = true;
+    const t = e.touches[0]; startX = t.clientX; startY = t.clientY;
+    origX = parseInt(panel.style.left); origY = parseInt(panel.style.top);
+    panel.style.zIndex = 50;
+  }, { passive: true });
+  document.addEventListener('touchmove', function(e) {
+    if (!isDragging) return;
+    const t = e.touches[0];
+    panel.style.left = (origX + t.clientX - startX) + 'px';
+    panel.style.top = (origY + t.clientY - startY) + 'px';
+  }, { passive: true });
+  document.addEventListener('touchend', function() { isDragging = false; });
+
+  // ── Touch: rotate ──
+  rotHandle.addEventListener('touchstart', function(e) {
+    isRotating = true; e.stopPropagation();
+    panel.classList.add('rotating');
+  }, { passive: true });
+  document.addEventListener('touchmove', function(e) {
+    if (!isRotating) return;
+    const t = e.touches[0];
+    const rect = panel.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    let angle = Math.atan2(t.clientY - cy, t.clientX - cx) * (180 / Math.PI) + 90;
+    if (angle < 0) angle += 360;
+    angle = Math.round(angle);
+    panel.style.transform = 'rotate(' + angle + 'deg)';
+    panel.dataset.rotation = angle;
+    rotLabel.textContent = angle + '°';
+  }, { passive: true });
+  document.addEventListener('touchend', function() { isRotating = false; panel.classList.remove('rotating'); });
+
+  photoCanvas.appendChild(panel);
+  photoPanels.push(panel);
+  updatePanelCount();
+}
+
+function removePanel(btn) {
+  const panel = btn.closest('.solar-panel-3d');
+  photoPanels = photoPanels.filter(p => p !== panel);
+  panel.remove();
+  updatePanelCount();
+}
+
+function clearPhotoMode() {
+  photoPanels.forEach(p => p.remove());
+  photoPanels = [];
+  updatePanelCount();
+}
+
+function updatePanelCount() {
+  document.getElementById('panelCount').textContent = photoPanels.length;
+}
+
+function updatePanelSize(val) {
+  panelSize = parseInt(val);
+}
+
+// ── PHOTO MODE SIMULATION ──
+let photoSimData = null;
+
+function simularFoto() {
+  const count = photoPanels.length;
+  if (count === 0) { alert('Coloque pelo menos 1 painel na foto!'); return; }
+
+  const panelType = document.getElementById('photoPanelType').value;
+  const p = PD[panelType];
+  const uf = document.getElementById('photoUF').value || 'SP';
+  const irr = IRR[uf] || 4.8;
+  const tar = TAR[uf] || 0.78;
+  const kWp = (count * p.w) / 1000;
+  const gen = kWp * irr * 30 * 0.78;
+  const sav = gen * 12 * tar;
+  const fmt = n => 'R$ ' + n.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+  const fornecedores = FORNECEDORES[uf] || [FORNECEDOR_DEFAULT];
+  const melhor = fornecedores.reduce((a, b) => a.preco_wp < b.preco_wp ? a : b);
+  const custoEquip = kWp * 1000 * melhor.preco_wp;
+
+  const inst = kWp * MAO_OBRA.instalacao_kwp;
+  const estr = kWp * MAO_OBRA.estrutura_kwp;
+  const elet = kWp * MAO_OBRA.eletrica_kwp;
+  const totalMao = inst + estr + elet;
+  const totalGeral = custoEquip + totalMao;
+  const payback = sav > 0 ? totalGeral / sav : 0;
+
+  document.getElementById('prPanels').textContent = count;
+  document.getElementById('prPower').textContent = kWp.toFixed(1) + ' kWp';
+  document.getElementById('prGen').textContent = gen.toFixed(0) + ' kWh';
+  document.getElementById('prSavings').textContent = fmt(sav);
+  document.getElementById('prFornecedor').textContent = melhor.nome;
+  document.getElementById('prFornecedorInfo').textContent = melhor.cidade + ' · ⭐ ' + melhor.nota + ' · R$ ' + melhor.preco_wp.toFixed(2) + '/Wp';
+  document.getElementById('prEquip').textContent = 'Equipamento: ' + fmt(custoEquip);
+  document.getElementById('prInst').textContent = fmt(inst);
+  document.getElementById('prEstr').textContent = fmt(estr);
+  document.getElementById('prElet').textContent = fmt(elet);
+  document.getElementById('prMaoTotal').textContent = fmt(totalMao);
+  document.getElementById('prTotal').textContent = fmt(totalGeral);
+  document.getElementById('prPayback').textContent = 'Payback: ' + payback.toFixed(1) + ' anos';
+
+  document.getElementById('photoResults').style.display = 'block';
+
+  photoSimData = {
+    address: document.getElementById('photoAddress').value || 'Upload foto',
+    panels: count, monthlyKwh: gen, annualSavings: sav,
+    investment: totalGeral, paybackYears: payback, region: uf
+  };
+}
+
+async function savePhotoSim() {
+  if (!photoSimData) return;
+  try {
+    await saveSimulation(photoSimData);
+    const m = document.getElementById('prSaveMsg');
+    m.textContent = '✓ Salvo!'; m.style.display = 'block';
+    setTimeout(() => m.style.display = 'none', 3000);
+  } catch(e) { alert('Erro: ' + e.message); }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | SolarMap AI</title>
+    <link rel="stylesheet" href="css/shared.css">
+    <link rel="stylesheet" href="css/auth.css">
+</head>
+<body>
+
+    <!-- Cosmic Background -->
+    <div class="cosmic-bg"></div>
+    <div class="cosmic-stars"></div>
+    <div class="energy-orbs" id="energyOrbs"></div>
+
+    <div class="auth-page">
+        <a href="index.html" style="position:fixed;top:24px;left:24px;z-index:100;background:rgba(6,12,20,0.85);backdrop-filter:blur(12px);border:1px solid rgba(238,244,255,0.1);border-radius:12px;padding:10px 20px;color:var(--ice);text-decoration:none;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:8px;transition:0.3s;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='rgba(238,244,255,0.1)';this.style.color='var(--ice)'">← Voltar ao site</a>
+        <div class="auth-card">
+
+            <!-- Logo -->
+            <div class="auth-logo">
+                <span class="logo-icon">&#9728;</span>
+                <span class="logo-text">Solar Map AI</span>
+            </div>
+
+            <!-- Title -->
+            <h1 class="auth-title">Bem-vindo de volta</h1>
+            <p class="auth-subtitle">Entre na sua conta para acessar o painel solar</p>
+
+            <!-- Alert -->
+            <div id="authAlert" class="auth-alert" style="display: none;"></div>
+
+            <!-- Login Form -->
+            <form id="loginForm" autocomplete="on">
+                <div class="form-group">
+                    <label class="form-label" for="email">E-mail</label>
+                    <input
+                        type="email"
+                        id="email"
+                        class="form-input"
+                        placeholder="seu@email.com"
+                        required
+                        autocomplete="email"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="password">Senha</label>
+                    <div class="input-password-wrapper">
+                        <input
+                            type="password"
+                            id="password"
+                            class="form-input"
+                            placeholder="Digite sua senha"
+                            required
+                            autocomplete="current-password"
+                        >
+                        <button type="button" class="password-toggle" id="togglePassword" aria-label="Mostrar senha">
+                            <svg class="eye-icon" id="eyeIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                            <svg class="eye-off-icon" id="eyeOffIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"></path>
+                                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"></path>
+                                <line x1="1" y1="1" x2="23" y2="23"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary btn-block" id="btnSubmit">
+                    Entrar
+                </button>
+            </form>
+
+            <!-- Forgot Password -->
+            <div class="auth-link">
+                <a href="forgot-password.html">Esqueceu a senha?</a>
+            </div>
+
+            <!-- Footer -->
+            <div class="auth-footer">
+                <span>N&atilde;o tem conta?</span>
+                <a href="register.html">Criar conta gr&aacute;tis</a>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- App Scripts -->
+    <script src="js/supabase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/guard.js"></script>
+
+    <script>
+        // Generate energy orbs
+        (function() {
+            const container = document.getElementById('energyOrbs');
+            if (!container) return;
+            const types = ['orb--gold','orb--green','orb--white','orb--orange','orb--blue'];
+            for (let i = 0; i < 150; i++) {
+                const orb = document.createElement('div');
+                const type = types[i % types.length];
+                const size = Math.random() * 10 + 2;
+                const duration = Math.random() * 25 + 6;
+                const delay = Math.random() * 20;
+                const driftX = (Math.random() - 0.5) * 400;
+                const animStyle = i % 3;
+                let anim;
+                if (animStyle === 0) {
+                    anim = `orbDrift ${duration}s ${delay}s linear infinite`;
+                    orb.style.setProperty('--drift-x', driftX + 'px');
+                } else if (animStyle === 1) {
+                    anim = `orbPulse ${Math.random()*5+2}s ${delay}s ease-in-out infinite`;
+                } else {
+                    orb.style.setProperty('--dx', (Math.random()-0.5)*300 + 'px');
+                    orb.style.setProperty('--dy', (Math.random()-0.5)*300 + 'px');
+                    orb.style.setProperty('--dx2', (Math.random()-0.5)*400 + 'px');
+                    orb.style.setProperty('--dy2', (Math.random()-0.5)*400 + 'px');
+                    orb.style.setProperty('--scale-mid', (Math.random()*1.2+0.6).toFixed(2));
+                    anim = `orbFloat ${duration}s ${delay}s ease-in-out infinite`;
+                }
+                orb.className = 'orb ' + type;
+                orb.style.cssText += `width:${size}px;height:${size}px;left:${Math.random()*100}%;top:${Math.random()*100}%;animation:${anim};`;
+                container.appendChild(orb);
+            }
+        })();
+
+        // Password eye toggle
+        (function () {
+            const toggleBtn = document.getElementById('togglePassword');
+            const passwordInput = document.getElementById('password');
+            const eyeIcon = document.getElementById('eyeIcon');
+            const eyeOffIcon = document.getElementById('eyeOffIcon');
+
+            toggleBtn.addEventListener('click', function () {
+                const isPassword = passwordInput.type === 'password';
+                passwordInput.type = isPassword ? 'text' : 'password';
+                eyeIcon.style.display = isPassword ? 'none' : 'block';
+                eyeOffIcon.style.display = isPassword ? 'block' : 'none';
+                toggleBtn.setAttribute('aria-label', isPassword ? 'Ocultar senha' : 'Mostrar senha');
+            });
+        })();
+
+        // Login form handler
+        (function () {
+            const form = document.getElementById('loginForm');
+            const btnSubmit = document.getElementById('btnSubmit');
+            const authAlert = document.getElementById('authAlert');
+
+            form.addEventListener('submit', async function (e) {
+                e.preventDefault();
+
+                const email = document.getElementById('email').value.trim();
+                const password = document.getElementById('password').value;
+
+                // Hide previous alert
+                authAlert.style.display = 'none';
+                authAlert.textContent = '';
+
+                // Loading state
+                const originalText = btnSubmit.textContent;
+                btnSubmit.disabled = true;
+                btnSubmit.textContent = 'Entrando...';
+
+                try {
+                    await authSignIn(email, password);
+                    window.location.href = 'dashboard.html';
+                } catch (err) {
+                    authAlert.textContent = err.message || 'Erro ao fazer login. Tente novamente.';
+                    authAlert.style.display = 'block';
+                    btnSubmit.disabled = false;
+                    btnSubmit.textContent = originalText;
+                }
+            });
+        })();
+    </script>
+
+</body>
+</html>
