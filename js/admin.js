@@ -5,20 +5,24 @@
 
 /* ── ADMIN CHECK ── */
 async function isAdmin() {
+  const ADMIN_EMAIL = 'oescolhidoneo9@gmail.com';
   const user = await authGetUser();
   if (!user) {
     window.location.href = 'login.html';
     return false;
   }
-  const { data, error } = await supabase.from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-  if (error || !data || data.role !== 'admin') {
-    window.location.href = 'dashboard.html';
-    return false;
-  }
-  return true;
+  // Fallback: check email first
+  if (user.email === ADMIN_EMAIL) return true;
+  // Then check DB role
+  try {
+    const { data } = await supabase.from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+    if (data && data.role === 'admin') return true;
+  } catch (e) { /* RLS may fail, fallback already handled */ }
+  window.location.href = 'dashboard.html';
+  return false;
 }
 
 /* ── USERS ── */
@@ -92,16 +96,91 @@ async function getAdminBudgets() {
   return data || [];
 }
 
+/* ── SIMULATIONS (admin view) ── */
+async function getAdminSimulations() {
+  const { data, error } = await supabase.from('simulations')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+/* ── DELETE OPERATIONS ── */
+async function deleteAdminSimulation(id) {
+  const { error } = await supabase.from('simulations').delete().eq('id', id);
+  if (error) throw error;
+}
+
+async function deleteAdminProject(id) {
+  const { error } = await supabase.from('projects').delete().eq('id', id);
+  if (error) throw error;
+}
+
+async function deleteAdminBudget(id) {
+  const { error } = await supabase.from('budgets').delete().eq('id', id);
+  if (error) throw error;
+}
+
+/* ── UPDATE BUDGET STATUS ── */
+async function updateAdminBudgetStatus(id, status) {
+  const { data, error } = await supabase.from('budgets')
+    .update({ status })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+/* ── CHANGE USER PLAN ── */
+async function changeUserPlan(userId, newPlan) {
+  const updates = { plan: newPlan };
+  if (newPlan === 'pro' || newPlan === 'premium') {
+    const proUntil = new Date();
+    proUntil.setFullYear(proUntil.getFullYear() + 1);
+    updates.pro_until = proUntil.toISOString();
+  } else {
+    updates.pro_until = null;
+  }
+  const { data, error } = await supabase.from('profiles')
+    .update(updates)
+    .eq('id', userId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+/* ── GET USER FULL DATA (for "Entrar na conta" modal) ── */
+async function getUserFullData(userId) {
+  const [profileRes, simsRes, projsRes, budgetsRes] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', userId).single(),
+    supabase.from('simulations').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+    supabase.from('projects').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+    supabase.from('budgets').select('*, projects(name)').eq('user_id', userId).order('created_at', { ascending: false })
+  ]);
+  return {
+    profile: profileRes.data,
+    simulations: simsRes.data || [],
+    projects: projsRes.data || [],
+    budgets: budgetsRes.data || []
+  };
+}
+
 /* ── ADMIN STATS ── */
 async function getAdminStats() {
-  const users = await getAdminUsers();
-  const projects = await getAdminProjects();
-  const budgets = await getAdminBudgets();
+  const [users, projects, budgets, simulations] = await Promise.all([
+    getAdminUsers(),
+    getAdminProjects(),
+    getAdminBudgets(),
+    getAdminSimulations()
+  ]);
 
   const totalUsers = users.length;
   const proUsers = users.filter(u => u.plan === 'pro' || u.plan === 'premium').length;
   const freeUsers = users.filter(u => u.plan === 'free' || !u.plan).length;
   const totalProjects = projects.length;
+  const totalSimulations = simulations.length;
 
   let totalBudgetValue = 0;
   let approvedBudgets = 0;
@@ -118,13 +197,15 @@ async function getAdminStats() {
     proUsers,
     freeUsers,
     totalProjects,
+    totalSimulations,
     totalBudgets: budgets.length,
     totalBudgetValue,
     approvedBudgets,
     pendingBudgets,
     users,
     projects,
-    budgets
+    budgets,
+    simulations
   };
 }
 
