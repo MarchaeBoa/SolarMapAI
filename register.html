@@ -199,8 +199,8 @@ document.getElementById('registerForm').addEventListener('submit', async functio
     if (data.user && data.user.identities && data.user.identities.length === 0) {
       showAlert('Este email ja esta cadastrado.', 'error');
     } else if (data.session) {
-      // Auto-confirmed, redirect to dashboard
-      window.location.href = 'dashboard.html';
+      // Auto-confirmed, redirect to plans
+      window.location.href = 'planos.html';
     } else {
       // Needs email verification
       showAlert('Conta criada! Verifique seu email.', 'success');
