@@ -104,6 +104,36 @@
       </div>
     </div>
 
+    <!-- Account Info -->
+    <div class="dash-table-wrap" style="margin-bottom:32px" id="accountCard">
+      <div class="dash-table-header">
+        <h3>Minha Conta</h3>
+      </div>
+      <div style="padding:20px 24px;display:flex;flex-wrap:wrap;gap:32px;align-items:center">
+        <div style="display:flex;align-items:center;gap:16px;min-width:220px">
+          <div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,var(--gold),var(--gold-light));display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:800;color:var(--midnight)" id="accountAvatar">U</div>
+          <div>
+            <div style="font-weight:700;font-size:1rem;color:var(--ice)" id="accountName">Carregando...</div>
+            <div style="font-size:.82rem;color:var(--muted)" id="accountEmail">—</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:28px;flex-wrap:wrap">
+          <div><div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px">Plano</div><div style="font-weight:700;color:var(--ice)" id="accountPlan">—</div></div>
+          <div><div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px">Status</div><div style="font-weight:700;color:var(--green)" id="accountStatus">—</div></div>
+          <div><div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px">Membro desde</div><div style="font-weight:700;color:var(--ice)" id="accountSince">—</div></div>
+          <div><div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px">Pro ate</div><div style="font-weight:700;color:var(--ice)" id="accountProUntil">—</div></div>
+        </div>
+        <div id="accountAdminActions" style="display:none;margin-left:auto">
+          <select id="accountPlanSelect" style="padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:rgba(13,31,60,0.7);color:var(--ice);font-size:.8rem;font-family:inherit;cursor:pointer;outline:none">
+            <option value="free">Free</option>
+            <option value="pro">Pro</option>
+            <option value="premium">Premium</option>
+          </select>
+          <button onclick="adminChangePlan()" style="padding:6px 16px;border-radius:8px;border:1px solid var(--gold);background:var(--gold-glow);color:var(--gold-light);font-size:.78rem;font-weight:700;cursor:pointer;margin-left:8px;font-family:inherit">Alterar plano</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Recent Simulations -->
     <div class="dash-table-wrap" style="margin-bottom:32px">
       <div class="dash-table-header">
@@ -199,6 +229,62 @@ generateOrbs(150);
     console.log('Dashboard load:', e.message);
   }
 })();
+
+// Load account info
+(async function loadAccountInfo() {
+  try {
+    const user = await authGetUser();
+    if (!user) return;
+    const ADMIN_EMAIL = 'oescolhidoneo9@gmail.com';
+    let profile = null;
+    try {
+      const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+      profile = data;
+    } catch(e) {}
+
+    const name = profile?.full_name || user.user_metadata?.full_name || user.email.split('@')[0];
+    const email = user.email;
+    const plan = profile?.role === 'admin' ? 'Admin' : (profile?.plan || 'free');
+    const status = (profile?.status || 'active') === 'active' ? 'Ativo' : 'Inativo';
+    const since = profile?.created_at ? formatDate(profile.created_at) : '—';
+    const proUntil = profile?.pro_until ? formatDate(profile.pro_until) : '—';
+
+    document.getElementById('accountAvatar').textContent = name.charAt(0).toUpperCase();
+    document.getElementById('accountName').textContent = name;
+    document.getElementById('accountEmail').textContent = email;
+    document.getElementById('accountPlan').innerHTML = plan === 'Admin' ? '<span style="color:var(--gold)">Admin</span>' : plan === 'pro' ? '<span style="color:var(--green)">Pro</span>' : plan === 'premium' ? '<span style="color:#A078FF">Premium</span>' : '<span style="color:var(--muted)">Free</span>';
+    document.getElementById('accountStatus').textContent = status;
+    document.getElementById('accountStatus').style.color = status === 'Ativo' ? 'var(--green)' : 'var(--danger)';
+    document.getElementById('accountSince').textContent = since;
+    document.getElementById('accountProUntil').textContent = proUntil;
+
+    // Show admin actions if admin
+    if (user.email === ADMIN_EMAIL || profile?.role === 'admin') {
+      document.getElementById('accountAdminActions').style.display = 'flex';
+      document.getElementById('accountAdminActions').style.alignItems = 'center';
+      const sel = document.getElementById('accountPlanSelect');
+      sel.value = profile?.plan || 'free';
+    }
+  } catch(e) { console.log('Account info error:', e.message); }
+})();
+
+async function adminChangePlan() {
+  const user = await authGetUser();
+  if (!user) return;
+  const newPlan = document.getElementById('accountPlanSelect').value;
+  const planLabels = { free: 'Gratuito', pro: 'Pro (1 ano)', premium: 'Premium (1 ano)' };
+  if (!confirm('Alterar plano desta conta para ' + (planLabels[newPlan] || newPlan) + '?')) return;
+  try {
+    const updates = { plan: newPlan };
+    if (newPlan === 'pro' || newPlan === 'premium') {
+      const d = new Date(); d.setFullYear(d.getFullYear() + 1);
+      updates.pro_until = d.toISOString();
+    } else { updates.pro_until = null; }
+    await supabase.from('profiles').update(updates).eq('id', user.id);
+    alert('Plano alterado com sucesso!');
+    window.location.reload();
+  } catch(e) { alert('Erro: ' + e.message); }
+}
 
 // Highlight active nav
 const currentPage = window.location.pathname.split('/').pop();
