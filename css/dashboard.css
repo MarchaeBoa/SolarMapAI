@@ -3,7 +3,7 @@
    ============================================================ */
 
 .dash-layout {
-  display: grid; grid-template-columns: 260px 1fr;
+  display: block;
   min-height: 100vh; position: relative; z-index: 2;
 }
 
