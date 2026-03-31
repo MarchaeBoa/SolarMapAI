@@ -2361,8 +2361,9 @@ footer {
   <a href="#hero" onclick="closeMobile()">Início</a>
   <a href="#benefits" onclick="closeMobile()">Soluções</a>
   <a href="#how" onclick="closeMobile()">Como funciona</a>
-  <a href="#sim-endereco" onclick="closeMobile(); openSimModal(); return false;">Simulação</a>
+  <a href="#sim-endereco" onclick="closeMobile(); window.location.href='planos.html'; return false;">Simulação</a>
   <a href="#forwho" onclick="closeMobile()">Para empresas</a>
+  <a href="#planos" onclick="closeMobile()">Planos</a>
   <a href="#agendar-visita" onclick="closeMobile()">Agendar visita</a>
   <a href="#faq" onclick="closeMobile()">Contato</a>
   <a href="#cta-final" class="btn-primary" style="margin-top:16px" onclick="closeMobile()">Iniciar simulação</a>
@@ -2384,12 +2385,13 @@ footer {
         <a href="#how">Como funciona</a>
         <a href="#sim-endereco" onclick="openSimModal(); return false;">Simulação</a>
         <a href="#forwho">Para empresas</a>
+        <a href="#planos">Planos</a>
         <a href="#agendar-visita">Agendar visita</a>
         <a href="#faq">Contato</a>
       </nav>
       <div class="header-cta">
         <a href="login.html" class="btn-ghost">Entrar</a>
-        <button type="button" class="btn-primary" onclick="openSimModal()">Iniciar simulação ↗</button>
+        <button type="button" class="btn-primary" onclick="window.location.href='planos.html'">Iniciar simulação ↗</button>
       </div>
       <button class="hamburger" id="hamburger" aria-label="Menu">
         <span></span><span></span><span></span>
@@ -2422,7 +2424,7 @@ footer {
         </p>
         <div class="hero-actions">
           <!-- INTEGRAÇÃO: abre modal de simulação interativa -->
-          <button type="button" class="btn-primary" onclick="openSimModal()">Iniciar simulação gratuita ↗</button>
+          <button type="button" class="btn-primary" onclick="window.location.href='planos.html'">Iniciar simulação gratuita ↗</button>
           <a href="#how" class="btn-ghost">Como funciona</a>
         </div>
         <div class="hero-stats">
@@ -2579,7 +2581,7 @@ footer {
             </div>
           </div>
         </div>
-        <button type="button" class="btn-primary" onclick="openSimModal()">Testar agora ↗</button>
+        <button type="button" class="btn-primary" onclick="window.location.href='planos.html'">Testar agora ↗</button>
       </div>
     </div>
 
@@ -2837,7 +2839,7 @@ footer {
     <div class="tag" style="margin-bottom:20px">Instalação profissional</div>
     <h2>Do projeto à<br><span class="grad-gold">instalação completa</span></h2>
     <p>Nossa rede de integradores certificados garante uma instalação impecável, do primeiro parafuso ao último painel conectado.</p>
-    <button type="button" class="btn-primary" onclick="openSimModal()">Simule seu projeto ↗</button>
+    <button type="button" class="btn-primary" onclick="window.location.href='planos.html'">Simule seu projeto ↗</button>
   </div>
 </div>
 
@@ -3270,6 +3272,53 @@ footer {
         </div>
       </div>
       <div class="equip-summary-note">* Estimativa baseada nos valores da calculadora acima. Ajuste a calculadora para atualizar.</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══════════════════════════════════════════════
+     PLANOS
+══════════════════════════════════════════════ -->
+<section id="planos" style="padding:100px 0">
+  <div class="container">
+    <div class="section-header reveal" style="text-align:center;margin-bottom:56px">
+      <span class="section-tag" style="display:inline-block;padding:6px 18px;border-radius:50px;background:var(--gold-glow);color:var(--gold-light);font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:16px">Planos</span>
+      <h2 style="font-size:clamp(1.8rem,4vw,2.8rem);line-height:1.15;margin-bottom:16px">Escolha o plano ideal<br><span style="background:linear-gradient(135deg,var(--gold),var(--gold-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent">para sua energia solar</span></h2>
+      <p style="color:var(--muted);font-size:1.05rem;max-width:560px;margin:0 auto">Acesse o simulador completo com mapa satelite, gestao de projetos e orcamentos profissionais.</p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:28px;max-width:780px;margin:0 auto">
+      <!-- PLANO BASICO -->
+      <div style="background:rgba(13,31,60,0.45);border:1px solid var(--border);border-radius:20px;padding:36px 32px;backdrop-filter:blur(16px);display:flex;flex-direction:column">
+        <span style="display:inline-block;width:fit-content;padding:4px 14px;border-radius:50px;background:rgba(238,244,255,0.06);color:var(--muted);font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:20px">Basico</span>
+        <div style="margin-bottom:24px"><span style="font-family:'Plus Jakarta Sans',sans-serif;font-size:2.6rem;font-weight:800;color:var(--ice)">R$ 0</span><span style="color:var(--muted);font-size:.9rem">/mes</span></div>
+        <ul style="list-style:none;padding:0;margin:0 0 32px;display:flex;flex-direction:column;gap:12px;flex:1">
+          <li style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--ice)"><span style="color:var(--green)">&#10003;</span> Visualizar a landing page</li>
+          <li style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--ice)"><span style="color:var(--green)">&#10003;</span> Criar conta gratuita</li>
+          <li style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--muted);opacity:.5"><span style="color:var(--danger)">&#10007;</span> Simulador com mapa satelite</li>
+          <li style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--muted);opacity:.5"><span style="color:var(--danger)">&#10007;</span> Gestao de projetos</li>
+          <li style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--muted);opacity:.5"><span style="color:var(--danger)">&#10007;</span> Orcamentos profissionais</li>
+          <li style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--muted);opacity:.5"><span style="color:var(--danger)">&#10007;</span> Assistente MapSol IA</li>
+        </ul>
+        <a href="register.html" style="display:block;text-align:center;padding:14px 24px;border-radius:12px;font-size:.9rem;font-weight:700;color:var(--muted);border:1px solid var(--border);text-decoration:none;transition:all .3s ease">Criar conta gratis</a>
+      </div>
+
+      <!-- PLANO PRO -->
+      <div style="background:rgba(13,31,60,0.45);border:2px solid var(--gold);border-radius:20px;padding:36px 32px;backdrop-filter:blur(16px);display:flex;flex-direction:column;position:relative;box-shadow:0 0 40px rgba(212,168,67,0.1)">
+        <span style="display:inline-block;width:fit-content;padding:4px 14px;border-radius:50px;background:var(--gold-glow);color:var(--gold-light);font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:20px">&#11088; Mais popular</span>
+        <div style="margin-bottom:24px"><span style="font-family:'Plus Jakarta Sans',sans-serif;font-size:2.6rem;font-weight:800;background:linear-gradient(135deg,var(--gold),var(--gold-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent">R$ 19,90</span><span style="color:var(--muted);font-size:.9rem">/mes</span></div>
+        <ul style="list-style:none;padding:0;margin:0 0 32px;display:flex;flex-direction:column;gap:12px;flex:1">
+          <li style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--ice)"><span style="color:var(--green)">&#10003;</span> Simulador com mapa Google</li>
+          <li style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--ice)"><span style="color:var(--green)">&#10003;</span> Upload de foto + paineis 3D</li>
+          <li style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--ice)"><span style="color:var(--green)">&#10003;</span> Orcamentos com fornecedores</li>
+          <li style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--ice)"><span style="color:var(--green)">&#10003;</span> Gestao ilimitada de projetos</li>
+          <li style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--ice)"><span style="color:var(--green)">&#10003;</span> Assistente MapSol IA</li>
+          <li style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--ice)"><span style="color:var(--green)">&#10003;</span> Suporte prioritario</li>
+        </ul>
+        <a href="planos.html" style="display:block;text-align:center;padding:14px 24px;border-radius:12px;font-size:.9rem;font-weight:700;color:var(--midnight);background:linear-gradient(135deg,var(--gold),var(--gold-light));text-decoration:none;transition:all .3s ease;box-shadow:0 4px 20px rgba(212,168,67,0.3)">&#9728;&#65039; Assinar agora — R$ 19,90/mes</a>
+      </div>
     </div>
   </div>
 </section>
@@ -3765,7 +3814,7 @@ footer {
       <p>Leva menos de 3 minutos. Sem cartão de crédito. Sem compromisso.<br>Só inteligência solar ao seu alcance.</p>
       <div class="cta-final-btns">
         <!-- INTEGRAÇÃO: abre modal de simulação interativa -->
-        <button type="button" class="btn-primary" onclick="openSimModal()">Iniciar simulação gratuita ↗</button>
+        <button type="button" class="btn-primary" onclick="window.location.href='planos.html'">Iniciar simulação gratuita ↗</button>
         <button type="button" class="btn-ghost" onclick="openContactModal()">Falar com especialista</button>
       </div>
     </div>
