@@ -14,7 +14,8 @@ async function authSignUp(email, password, fullName) {
   if (data.user) {
     await supabase.from('profiles').insert({
       id: data.user.id,
-      full_name: fullName
+      full_name: fullName,
+      email: email
     });
   }
   return data;

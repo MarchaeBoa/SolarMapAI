@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel Administrativo — SolarMap AI</title>
+<link rel="stylesheet" href="css/shared.css">
+<link rel="stylesheet" href="css/dashboard.css">
+<link rel="stylesheet" href="css/solzinho.css">
+<style>
+  /* ── Admin Top Bar ── */
+  .admin-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 32px;
+    background: rgba(13,31,60,0.6);
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(12px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .admin-topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .admin-topbar-left .shield {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: var(--midnight);
+    font-weight: 800;
+  }
+  .admin-topbar-left h1 {
+    font-size: 1.3rem;
+    letter-spacing: -0.02em;
+    margin: 0;
+  }
+  .admin-topbar-left p {
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin: 0;
+  }
+  .admin-topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+  .admin-topbar-right a {
+    font-size: 0.88rem;
+    color: var(--muted);
+    transition: var(--transition);
+  }
+  .admin-topbar-right a:hover { color: var(--gold); }
+  .admin-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--midnight);
+  }
+
+  /* ── Admin Layout ── */
+  .admin-container {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 28px 32px 60px;
+  }
+
+  /* ── Stats Row ── */
+  .admin-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 18px;
+    margin-bottom: 32px;
+  }
+  .admin-stat-card {
+    background: rgba(13,31,60,0.4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: var(--transition);
+  }
+  .admin-stat-card:hover {
+    border-color: var(--border-gold);
+    transform: translateY(-2px);
+  }
+  .admin-stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .admin-stat-icon.gold { background: var(--gold-glow); }
+  .admin-stat-icon.green { background: var(--green-glow); }
+  .admin-stat-icon.blue { background: rgba(90,175,255,0.12); }
+  .admin-stat-icon.purple { background: rgba(160,120,255,0.12); }
+  .admin-stat-label {
+    font-size: 0.78rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 2px;
+  }
+  .admin-stat-value {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  /* ── Tabs ── */
+  .admin-tabs {
+    display: flex;
+    gap: 4px;
+    background: rgba(13,31,60,0.4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 5px;
+    margin-bottom: 24px;
+    width: fit-content;
+  }
+  .admin-tab {
+    padding: 10px 22px;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    transition: var(--transition);
+    border: none;
+    background: none;
+    font-family: inherit;
+  }
+  .admin-tab:hover { color: var(--ice); }
+  .admin-tab.active {
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    color: var(--midnight);
+  }
+
+  /* ── Tab Content ── */
+  .admin-tab-content { display: none; }
+  .admin-tab-content.active { display: block; }
+
+  /* ── Toolbar ── */
+  .admin-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .admin-search {
+    flex: 1;
+    min-width: 220px;
+    padding: 10px 16px 10px 40px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: rgba(13,31,60,0.5);
+    color: var(--ice);
+    font-size: 0.88rem;
+    font-family: inherit;
+    outline: none;
+    transition: var(--transition);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='rgba(238,244,255,0.35)' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242.656a5 5 0 1 1 0-10 5 5 0 0 1 0 10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: 14px center;
+  }
+  .admin-search:focus { border-color: var(--gold); }
+  .admin-search::placeholder { color: var(--muted); }
+
+  .admin-select {
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: rgba(13,31,60,0.5);
+    color: var(--ice);
+    font-size: 0.85rem;
+    font-family: inherit;
+    outline: none;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+  .admin-select:focus { border-color: var(--gold); }
+  .admin-select option { background: var(--deep-navy); color: var(--ice); }
+
+  .admin-user-count {
+    font-size: 0.82rem;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  /* ── Table ── */
+  .admin-table-wrap {
+    background: rgba(13,31,60,0.4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow-x: auto;
+  }
+  .admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+  .admin-table th {
+    text-align: left;
+    padding: 14px 18px;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .admin-table td {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .admin-table tbody tr {
+    transition: var(--transition);
+  }
+  .admin-table tbody tr:hover {
+    background: rgba(212,168,67,0.04);
+  }
+  .admin-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  /* ── Badges ── */
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .badge-admin {
+    background: var(--gold-glow);
+    color: var(--gold-light);
+    border: 1px solid var(--border-gold);
+  }
+  .badge-pro {
+    background: var(--green-glow);
+    color: var(--green);
+    border: 1px solid rgba(31,216,164,0.2);
+  }
+  .badge-free {
+    background: rgba(238,244,255,0.06);
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .badge-active {
+    background: var(--green-glow);
+    color: var(--green);
+  }
+  .badge-inactive {
+    background: var(--danger-glow);
+    color: var(--danger);
+  }
+
+  /* ── Action Buttons ── */
+  .admin-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .admin-btn {
+    padding: 5px 12px;
+    border-radius: 7px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    background: rgba(13,31,60,0.5);
+    color: var(--ice);
+    cursor: pointer;
+    transition: var(--transition);
+    white-space: nowrap;
+    font-family: inherit;
+  }
+  .admin-btn:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+  .admin-btn.promote {
+    border-color: var(--green-dim);
+    color: var(--green);
+  }
+  .admin-btn.promote:hover {
+    background: var(--green-glow);
+  }
+  .admin-btn.danger {
+    border-color: rgba(255,95,87,0.3);
+    color: var(--danger);
+  }
+  .admin-btn.danger:hover {
+    background: var(--danger-glow);
+  }
+  .admin-role-label {
+    font-size: 0.78rem;
+    color: var(--gold);
+    font-weight: 600;
+    font-style: italic;
+  }
+
+  /* ── Section Titles ── */
+  .admin-section {
+    margin-top: 40px;
+    margin-bottom: 20px;
+  }
+  .admin-section h2 {
+    font-size: 1.15rem;
+    margin-bottom: 4px;
+  }
+  .admin-section p {
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
+
+  /* ── Info Cards Grid ── */
+  .admin-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 18px;
+  }
+  .admin-card {
+    background: rgba(13,31,60,0.4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    transition: var(--transition);
+  }
+  .admin-card:hover {
+    border-color: var(--border-gold);
+    transform: translateY(-2px);
+  }
+  .admin-card h3 {
+    font-size: 0.95rem;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .admin-card .card-value {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-bottom: 6px;
+  }
+  .admin-card .card-desc {
+    font-size: 0.8rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* ── Access Level Cards ── */
+  .access-card {
+    border-top: 3px solid transparent;
+  }
+  .access-card.gold-border { border-top-color: var(--gold); }
+  .access-card.green-border { border-top-color: var(--green); }
+  .access-card.blue-border { border-top-color: #5AAFFF; }
+  .access-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 10px;
+  }
+
+  /* ── Projects Tab Table ── */
+  .admin-table .project-name {
+    font-weight: 600;
+    color: var(--ice);
+  }
+  .admin-table .project-owner {
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+
+  /* ── Empty state ── */
+  .admin-empty {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    .admin-topbar { padding: 14px 16px; flex-wrap: wrap; gap: 12px; }
+    .admin-container { padding: 20px 16px 40px; }
+    .admin-toolbar { flex-direction: column; align-items: stretch; }
+    .admin-search { min-width: unset; }
+    .admin-tabs { width: 100%; overflow-x: auto; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="admin-topbar">
+  <div class="admin-topbar-left">
+    <div class="shield">&#x1F6E1;</div>
+    <div>
+      <h1>Painel Administrativo</h1>
+      <p>Gerencie usuarios, planos e projetos</p>
+    </div>
+  </div>
+  <div class="admin-topbar-right">
+    <a href="dashboard.html">&larr; Voltar ao Dashboard</a>
+    <div class="admin-avatar" id="adminAvatar">A</div>
+  </div>
+</div>
+
+<!-- Main Content -->
+<div class="admin-container">
+
+  <!-- Stats Cards -->
+  <div class="admin-stats">
+    <div class="admin-stat-card">
+      <div class="admin-stat-icon gold">&#128101;</div>
+      <div>
+        <div class="admin-stat-label">Total de Usuarios</div>
+        <div class="admin-stat-value grad-gold" id="statTotalUsers">0</div>
+      </div>
+    </div>
+    <div class="admin-stat-card">
+      <div class="admin-stat-icon green">&#11088;</div>
+      <div>
+        <div class="admin-stat-label">Profissionais</div>
+        <div class="admin-stat-value grad-green" id="statProUsers">0</div>
+      </div>
+    </div>
+    <div class="admin-stat-card">
+      <div class="admin-stat-icon blue">&#128100;</div>
+      <div>
+        <div class="admin-stat-label">Plano Gratis</div>
+        <div class="admin-stat-value" style="color:#5AAFFF" id="statFreeUsers">0</div>
+      </div>
+    </div>
+    <div class="admin-stat-card">
+      <div class="admin-stat-icon purple">&#128196;</div>
+      <div>
+        <div class="admin-stat-label">Total de Projetos</div>
+        <div class="admin-stat-value" style="color:#A078FF" id="statTotalProjects">0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="admin-tabs">
+    <button class="admin-tab active" data-tab="usuarios" onclick="switchTab('usuarios')">Usuarios</button>
+    <button class="admin-tab" data-tab="projetos" onclick="switchTab('projetos')">Projetos dos Clientes</button>
+    <button class="admin-tab" data-tab="notificacoes" onclick="switchTab('notificacoes')">Notificacoes</button>
+  </div>
+
+  <!-- TAB: Usuarios -->
+  <div class="admin-tab-content active" id="tab-usuarios">
+    <!-- Toolbar -->
+    <div class="admin-toolbar">
+      <input type="text" class="admin-search" id="searchUsers" placeholder="Buscar usuario por nome ou email..." oninput="filterUsers()">
+      <select class="admin-select" id="filterPlan" onchange="filterUsers()">
+        <option value="">Todos os planos</option>
+        <option value="admin">Admin</option>
+        <option value="pro">Pro</option>
+        <option value="free">Gratis</option>
+      </select>
+      <select class="admin-select" id="filterStatus" onchange="filterUsers()">
+        <option value="">Todos os status</option>
+        <option value="active">Ativo</option>
+        <option value="inactive">Inativo</option>
+      </select>
+      <span class="admin-user-count" id="userCount">0 usuarios</span>
+    </div>
+
+    <!-- Users Table -->
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Email</th>
+            <th>Plano</th>
+            <th>Assinatura Pro</th>
+            <th>Status</th>
+            <th>Cadastro</th>
+            <th>Acoes</th>
+          </tr>
+        </thead>
+        <tbody id="usersTable">
+          <tr><td colspan="7" class="admin-empty">Carregando usuarios...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Financial Summary -->
+    <div class="admin-section">
+      <h2>Resumo Financeiro dos Orcamentos</h2>
+      <p>Visao geral dos orcamentos de todos os clientes</p>
+    </div>
+    <div class="admin-cards">
+      <div class="admin-card">
+        <h3>&#9989; Orcamentos Aprovados</h3>
+        <div class="card-value grad-green" id="statApproved">0</div>
+        <div class="card-desc">Total de orcamentos aprovados pelos clientes</div>
+      </div>
+      <div class="admin-card">
+        <h3>&#9203; Em Analise</h3>
+        <div class="card-value" style="color:#5AAFFF" id="statPending">0</div>
+        <div class="card-desc">Orcamentos aguardando aprovacao</div>
+      </div>
+      <div class="admin-card">
+        <h3>&#128176; Valor Total</h3>
+        <div class="card-value grad-gold" id="statTotalValue">R$ 0,00</div>
+        <div class="card-desc">Soma de todos os orcamentos gerados</div>
+      </div>
+    </div>
+
+    <!-- Access Control -->
+    <div class="admin-section">
+      <h2>Controle de Acesso</h2>
+      <p>Niveis de permissao do sistema</p>
+    </div>
+    <div class="admin-cards">
+      <div class="admin-card access-card gold-border">
+        <span class="access-badge" style="background:var(--gold-glow);color:var(--gold-light);">ADMIN</span>
+        <h3>Administrador</h3>
+        <div class="card-desc">Acesso total ao sistema. Pode gerenciar usuarios, alterar planos, visualizar todos os projetos e orcamentos, e acessar o painel administrativo.</div>
+      </div>
+      <div class="admin-card access-card green-border">
+        <span class="access-badge" style="background:var(--green-glow);color:var(--green);">PROFISSIONAL</span>
+        <h3>Profissional</h3>
+        <div class="card-desc">Acesso ao simulador solar completo, projetos ilimitados, orcamentos detalhados, exportacao em PDF e suporte prioritario.</div>
+      </div>
+      <div class="admin-card access-card blue-border">
+        <span class="access-badge" style="background:rgba(90,175,255,0.12);color:#5AAFFF;">USUARIO PADRAO</span>
+        <h3>Usuario Padrao</h3>
+        <div class="card-desc">Acesso basico com limite de simulacoes e projetos. Pode realizar ate 2 simulacoes gratuitas e visualizar resultados simplificados.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Projetos -->
+  <div class="admin-tab-content" id="tab-projetos">
+    <div class="admin-toolbar">
+      <input type="text" class="admin-search" id="searchProjects" placeholder="Buscar projeto por nome..." oninput="filterProjects()">
+      <span class="admin-user-count" id="projectCount">0 projetos</span>
+    </div>
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Projeto</th>
+            <th>Proprietario</th>
+            <th>Status</th>
+            <th>Potencia (kWp)</th>
+            <th>Investimento</th>
+            <th>Criado em</th>
+          </tr>
+        </thead>
+        <tbody id="projectsTable">
+          <tr><td colspan="6" class="admin-empty">Carregando projetos...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB: Notificacoes -->
+  <div class="admin-tab-content" id="tab-notificacoes">
+    <div class="admin-empty">
+      <p style="font-size:2rem;margin-bottom:12px;">&#128276;</p>
+      <p>Nenhuma notificacao no momento.</p>
+      <p style="margin-top:6px;font-size:0.8rem;">As notificacoes de novos cadastros e atividades aparecerao aqui.</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/admin.js"></script>
+<script src="js/guard.js"></script>
+<script src="js/solzinho.js"></script>
+
+<script>
+  /* ── Global state ── */
+  let allUsers = [];
+  let allProjects = [];
+
+  /* ── Init ── */
+  document.addEventListener('DOMContentLoaded', async () => {
+    // Generate background orbs
+    if (typeof generateOrbs === 'function') generateOrbs(100);
+
+    // Verify admin access
+    const admin = await isAdmin();
+    if (!admin) return;
+
+    // Set admin avatar
+    const user = await authGetUser();
+    if (user) {
+      const initial = (user.user_metadata?.full_name || user.email || 'A')[0].toUpperCase();
+      document.getElementById('adminAvatar').textContent = initial;
+    }
+
+    // Load everything
+    await loadAdminData();
+  });
+
+  /* ── Load all data ── */
+  async function loadAdminData() {
+    try {
+      const stats = await getAdminStats();
+
+      // Update stat cards
+      document.getElementById('statTotalUsers').textContent = stats.totalUsers;
+      document.getElementById('statProUsers').textContent = stats.proUsers;
+      document.getElementById('statFreeUsers').textContent = stats.freeUsers;
+      document.getElementById('statTotalProjects').textContent = stats.totalProjects;
+
+      // Financial summary
+      document.getElementById('statApproved').textContent = stats.approvedBudgets;
+      document.getElementById('statPending').textContent = stats.pendingBudgets;
+      document.getElementById('statTotalValue').textContent = formatCurrency(stats.totalBudgetValue);
+
+      // Store for filtering
+      allUsers = stats.users;
+      allProjects = stats.projects;
+
+      // Render tables
+      renderUsersTable(allUsers);
+      renderProjectsTable(allProjects);
+    } catch (err) {
+      console.error('Erro ao carregar dados admin:', err);
+    }
+  }
+
+  /* ── Render Users Table ── */
+  function renderUsersTable(users) {
+    const tbody = document.getElementById('usersTable');
+    document.getElementById('userCount').textContent = users.length + ' usuario' + (users.length !== 1 ? 's' : '');
+
+    if (!users.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="admin-empty">Nenhum usuario encontrado.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = users.map(u => {
+      const plan = u.role === 'admin' ? 'admin' : (u.plan || 'free');
+      const planBadge = plan === 'admin'
+        ? '<span class="badge badge-admin">ADM</span>'
+        : plan === 'pro' || plan === 'premium'
+          ? '<span class="badge badge-pro">PRO</span>'
+          : '<span class="badge badge-free">GRATIS</span>';
+
+      const status = u.status || 'active';
+      const statusBadge = status === 'active'
+        ? '<span class="badge badge-active">ATIVO</span>'
+        : '<span class="badge badge-inactive">INATIVO</span>';
+
+      const proUntil = u.pro_until ? formatDate(u.pro_until) : '—';
+
+      const actions = u.role === 'admin'
+        ? '<span class="admin-role-label">Administrador</span>'
+        : `<div class="admin-actions">
+            ${plan !== 'pro' ? `<button class="admin-btn promote" onclick="promoteUserUI('${u.id}')">+ Promover</button>` : `<button class="admin-btn danger" onclick="demoteUserUI('${u.id}')">Rebaixar</button>`}
+            <button class="admin-btn" onclick="viewUserProjects('${u.id}')">Projetos</button>
+            ${status === 'active'
+              ? `<button class="admin-btn danger" onclick="deactivateUserUI('${u.id}')">Desativar</button>`
+              : `<button class="admin-btn promote" onclick="activateUserUI('${u.id}')">Ativar</button>`
+            }
+          </div>`;
+
+      return `<tr>
+        <td style="font-weight:600">${u.full_name || 'Sem nome'}</td>
+        <td style="color:var(--muted)">${u.email || '—'}</td>
+        <td>${planBadge}</td>
+        <td style="color:var(--muted)">${proUntil}</td>
+        <td>${statusBadge}</td>
+        <td style="color:var(--muted)">${formatDate(u.created_at)}</td>
+        <td>${actions}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  /* ── Render Projects Table ── */
+  function renderProjectsTable(projects) {
+    const tbody = document.getElementById('projectsTable');
+    document.getElementById('projectCount').textContent = projects.length + ' projeto' + (projects.length !== 1 ? 's' : '');
+
+    if (!projects.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="admin-empty">Nenhum projeto encontrado.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = projects.map(p => {
+      const statusMap = {
+        rascunho: '<span class="badge badge-free">Rascunho</span>',
+        em_andamento: '<span class="badge badge-pro">Em andamento</span>',
+        concluido: '<span class="badge badge-active">Concluido</span>',
+        cancelado: '<span class="badge badge-inactive">Cancelado</span>'
+      };
+      const statusBadge = statusMap[p.status] || `<span class="badge badge-free">${p.status || '—'}</span>`;
+
+      // Find user name
+      const owner = allUsers.find(u => u.id === p.user_id);
+      const ownerName = owner ? (owner.full_name || owner.email || 'Desconhecido') : 'Desconhecido';
+
+      return `<tr>
+        <td class="project-name">${p.name || 'Sem nome'}</td>
+        <td class="project-owner">${ownerName}</td>
+        <td>${statusBadge}</td>
+        <td style="color:var(--muted)">${p.power_kwp ? p.power_kwp + ' kWp' : '—'}</td>
+        <td style="color:var(--muted)">${p.investment ? formatCurrency(p.investment) : '—'}</td>
+        <td style="color:var(--muted)">${formatDate(p.created_at)}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  /* ── Tab Switching ── */
+  function switchTab(tabName) {
+    document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.admin-tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelector(`.admin-tab[data-tab="${tabName}"]`).classList.add('active');
+    document.getElementById('tab-' + tabName).classList.add('active');
+  }
+
+  /* ── Filter Users ── */
+  function filterUsers() {
+    const search = document.getElementById('searchUsers').value.toLowerCase().trim();
+    const planFilter = document.getElementById('filterPlan').value;
+    const statusFilter = document.getElementById('filterStatus').value;
+
+    let filtered = allUsers;
+
+    if (search) {
+      filtered = filtered.filter(u =>
+        (u.full_name || '').toLowerCase().includes(search) ||
+        (u.email || '').toLowerCase().includes(search)
+      );
+    }
+
+    if (planFilter) {
+      if (planFilter === 'admin') {
+        filtered = filtered.filter(u => u.role === 'admin');
+      } else if (planFilter === 'pro') {
+        filtered = filtered.filter(u => u.plan === 'pro' || u.plan === 'premium');
+      } else {
+        filtered = filtered.filter(u => (u.plan === 'free' || !u.plan) && u.role !== 'admin');
+      }
+    }
+
+    if (statusFilter) {
+      filtered = filtered.filter(u => (u.status || 'active') === statusFilter);
+    }
+
+    renderUsersTable(filtered);
+  }
+
+  /* ── Filter Projects ── */
+  function filterProjects() {
+    const search = document.getElementById('searchProjects').value.toLowerCase().trim();
+    let filtered = allProjects;
+    if (search) {
+      filtered = filtered.filter(p => (p.name || '').toLowerCase().includes(search));
+    }
+    renderProjectsTable(filtered);
+  }
+
+  /* ── Promote UI ── */
+  async function promoteUserUI(userId) {
+    const userName = allUsers.find(u => u.id === userId)?.full_name || 'este usuario';
+    if (!confirm(`Promover ${userName} para o plano PRO por 1 ano?`)) return;
+    try {
+      await promoteUser(userId, 'pro');
+      alert('Usuario promovido com sucesso!');
+      await loadAdminData();
+    } catch (err) {
+      alert('Erro ao promover usuario: ' + err.message);
+    }
+  }
+
+  /* ── Demote UI ── */
+  async function demoteUserUI(userId) {
+    const userName = allUsers.find(u => u.id === userId)?.full_name || 'este usuario';
+    if (!confirm(`Rebaixar ${userName} para o plano gratuito?`)) return;
+    try {
+      await demoteUser(userId);
+      alert('Usuario rebaixado para plano gratuito.');
+      await loadAdminData();
+    } catch (err) {
+      alert('Erro ao rebaixar usuario: ' + err.message);
+    }
+  }
+
+  /* ── Deactivate UI ── */
+  async function deactivateUserUI(userId) {
+    const userName = allUsers.find(u => u.id === userId)?.full_name || 'este usuario';
+    if (!confirm(`Desativar a conta de ${userName}? O usuario nao podera acessar o sistema.`)) return;
+    try {
+      await deactivateUser(userId);
+      alert('Conta desativada.');
+      await loadAdminData();
+    } catch (err) {
+      alert('Erro ao desativar conta: ' + err.message);
+    }
+  }
+
+  /* ── Activate UI ── */
+  async function activateUserUI(userId) {
+    const userName = allUsers.find(u => u.id === userId)?.full_name || 'este usuario';
+    if (!confirm(`Reativar a conta de ${userName}?`)) return;
+    try {
+      await activateUser(userId);
+      alert('Conta reativada com sucesso!');
+      await loadAdminData();
+    } catch (err) {
+      alert('Erro ao reativar conta: ' + err.message);
+    }
+  }
+
+  /* ── View User Projects ── */
+  function viewUserProjects(userId) {
+    const userProjects = allProjects.filter(p => p.user_id === userId);
+    const userName = allUsers.find(u => u.id === userId)?.full_name || 'Usuario';
+    if (!userProjects.length) {
+      alert(`${userName} nao possui projetos.`);
+      return;
+    }
+    // Switch to projects tab and filter
+    switchTab('projetos');
+    renderProjectsTable(userProjects);
+    document.getElementById('projectCount').textContent = userProjects.length + ' projeto(s) de ' + userName;
+  }
+</script>
+</body>
+</html>

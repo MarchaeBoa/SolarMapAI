@@ -32,10 +32,15 @@
       const avatarEl = document.getElementById('dashUserAvatar');
 
       if (nameEl) {
-        const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user.id).single();
+        const { data: profile } = await supabase.from('profiles').select('full_name, role').eq('id', user.id).single();
         const name = profile?.full_name || user.email.split('@')[0];
         nameEl.textContent = name;
         if (avatarEl) avatarEl.textContent = name.charAt(0).toUpperCase();
+        // Show admin link if user is admin
+        if (profile?.role === 'admin') {
+          const adminLink = document.getElementById('adminLink');
+          if (adminLink) adminLink.style.display = 'flex';
+        }
       }
       if (emailEl) emailEl.textContent = user.email;
     }
