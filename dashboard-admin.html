@@ -423,23 +423,55 @@
 </head>
 <body>
 
-<!-- Top Bar -->
-<div class="admin-topbar">
-  <div class="admin-topbar-left">
-    <div class="shield">&#x1F6E1;</div>
-    <div>
-      <h1>Painel Administrativo</h1>
-      <p>Gerencie usuarios, planos e projetos</p>
+<!-- Cosmic Background -->
+<div class="cosmic-bg"></div>
+<div class="cosmic-stars"></div>
+<div class="energy-orbs" id="energyOrbs"></div>
+
+<!-- Mobile Toggle -->
+<button class="dash-mobile-toggle" onclick="toggleDashSidebar()">☰</button>
+
+<div class="dash-layout">
+  <aside class="dash-sidebar">
+    <a href="dashboard.html" class="dash-sidebar-logo">
+      <div class="dash-sidebar-logo-icon">☀</div>
+      <div class="dash-sidebar-logo-text">Solar<span>Map</span> AI</div>
+    </a>
+    <nav class="dash-nav">
+      <div class="dash-nav-section">Principal</div>
+      <a href="dashboard.html" class="dash-nav-item"><span class="dash-nav-icon">📊</span> Painel Geral</a>
+      <a href="dashboard-simulador.html" class="dash-nav-item"><span class="dash-nav-icon">☀️</span> Simulador</a>
+      <div class="dash-nav-section">Gestão</div>
+      <a href="dashboard-projetos.html" class="dash-nav-item"><span class="dash-nav-icon">📁</span> Projetos</a>
+      <a href="dashboard-orcamentos.html" class="dash-nav-item"><span class="dash-nav-icon">💰</span> Orçamentos</a>
+      <div class="dash-nav-section">Conta</div>
+      <a href="dashboard-admin.html" class="dash-nav-item active" style="color:#D4A843;border:1px solid rgba(212,168,67,0.3);background:rgba(212,168,67,0.08);"><span class="dash-nav-icon">🛡️</span> Painel Admin</a>
+      <a href="dashboard-perfil.html" class="dash-nav-item"><span class="dash-nav-icon">👤</span> Meu Perfil</a>
+    </nav>
+    <div class="dash-sidebar-footer">
+      <div class="dash-user-info" onclick="window.location.href='dashboard-perfil.html'">
+        <div class="dash-user-avatar" id="dashUserAvatar">A</div>
+        <div>
+          <div class="dash-user-name" id="dashUserName">Admin</div>
+          <div class="dash-user-email" id="dashUserEmail"></div>
+        </div>
+      </div>
+      <button class="dash-logout" onclick="authSignOut()"><span>🚪</span> Sair da conta</button>
+    </div>
+  </aside>
+
+  <main class="dash-main">
+
+  <!-- Admin Header -->
+  <div class="dash-header">
+    <div class="dash-header-left">
+      <h1>🛡️ Painel Administrativo</h1>
+      <p>Gerencie usuários, planos e projetos</p>
     </div>
   </div>
-  <div class="admin-topbar-right">
-    <a href="dashboard.html">&larr; Voltar ao Dashboard</a>
-    <div class="admin-avatar" id="adminAvatar">A</div>
-  </div>
-</div>
 
-<!-- Main Content -->
-<div class="admin-container">
+  <!-- Main Content -->
+  <div class="admin-container">
 
   <!-- Stats Cards -->
   <div class="admin-stats">
@@ -861,6 +893,12 @@
     renderProjectsTable(userProjects);
     document.getElementById('projectCount').textContent = userProjects.length + ' projeto(s) de ' + userName;
   }
+
+  // Generate orbs
+  generateOrbs(100);
 </script>
+<script src="js/solzinho.js"></script>
+</main>
+</div>
 </body>
 </html>
