@@ -2341,15 +2341,8 @@ footer {
   .integracoes-grid { grid-template-columns:1fr 1fr; gap:12px; }
 }
 
-/* ══ MOBILE PERFORMANCE ══ */
-@media (max-width: 768px) {
-  *, *::before, *::after { backdrop-filter: blur(6px) !important; -webkit-backdrop-filter: blur(6px) !important; }
-  .energy-orbs .orb { animation-duration: 18s !important; }
-  .cosmic-stars { opacity: 0.6 !important; }
-}
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; transition: none !important; }
-  .orb, .particle, .cosmic-stars { display: none !important; }
+  .orb, .particle { animation-duration: 30s !important; }
 }
 </style>
 </head>
@@ -5323,8 +5316,7 @@ document.querySelectorAll('#calc-economia .reveal').forEach(function(el) { revea
   const container = document.getElementById('particles');
   if (!container) return;
   const colors = ['rgba(212,168,67,0.3)', 'rgba(31,216,164,0.2)', 'rgba(240,201,107,0.25)'];
-  const pCount = window.innerWidth < 768 ? 8 : 25;
-  for (let i = 0; i < pCount; i++) {
+  for (let i = 0; i < 25; i++) {
     const p = document.createElement('div');
     p.className = 'particle';
     const size = Math.random() * 4 + 2;
@@ -5344,8 +5336,7 @@ document.querySelectorAll('#calc-economia .reveal').forEach(function(el) { revea
   const container = document.getElementById('energyOrbs');
   if (!container) return;
   const types = ['orb--gold','orb--green','orb--white','orb--orange','orb--blue'];
-  const isMobile = window.innerWidth < 768;
-  const total = isMobile ? 50 : 150;
+  const total = 250;
 
   for (let i = 0; i < total; i++) {
     const orb = document.createElement('div');
