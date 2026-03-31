@@ -6,7 +6,7 @@
 <title>SolarMap AI — Inteligência Geoespacial Solar</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
 /* ============================================================
    SOLARMAP AI — DESIGN SYSTEM
@@ -2340,6 +2340,19 @@ footer {
 @media (max-width: 420px) {
   .integracoes-grid { grid-template-columns:1fr 1fr; gap:12px; }
 }
+
+/* ══ MOBILE PERFORMANCE ══ */
+@media (max-width: 768px) {
+  *, *::before, *::after { backdrop-filter: blur(4px) !important; -webkit-backdrop-filter: blur(4px) !important; }
+  .energy-orbs .orb { animation-duration: 20s !important; }
+  .cosmic-stars { opacity: 0.3 !important; }
+  .particle { display: none !important; }
+  #solzinhoFloat { display: none !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .orb, .particle, .cosmic-stars { display: none !important; }
+}
 </style>
 </head>
 <body>
@@ -3526,7 +3539,7 @@ footer {
 
         <div class="testimonial-card">
           <div class="testimonial-header">
-            <div class="testimonial-avatar"><img src="face-1.jpg" alt="Ricardo" style="width:100%;height:100%;object-fit:cover;"></div>
+            <div class="testimonial-avatar"><img loading="lazy" src="face-1.jpg" alt="Ricardo" style="width:100%;height:100%;object-fit:cover;"></div>
             <div class="testimonial-info">
               <div class="testimonial-name">Roberto Almeida</div>
               <div class="testimonial-meta">São Paulo, SP</div>
@@ -3539,7 +3552,7 @@ footer {
 
         <div class="testimonial-card">
           <div class="testimonial-header">
-            <div class="testimonial-avatar"><img src="face-2.jpg" alt="Camila" style="width:100%;height:100%;object-fit:cover;"></div>
+            <div class="testimonial-avatar"><img loading="lazy" src="face-2.jpg" alt="Camila" style="width:100%;height:100%;object-fit:cover;"></div>
             <div class="testimonial-info">
               <div class="testimonial-name">Camila Ferreira</div>
               <div class="testimonial-meta">Belo Horizonte, MG</div>
@@ -3552,7 +3565,7 @@ footer {
 
         <div class="testimonial-card">
           <div class="testimonial-header">
-            <div class="testimonial-avatar"><img src="face-3.jpg" alt="Marcos" style="width:100%;height:100%;object-fit:cover;"></div>
+            <div class="testimonial-avatar"><img loading="lazy" src="face-3.jpg" alt="Marcos" style="width:100%;height:100%;object-fit:cover;"></div>
             <div class="testimonial-info">
               <div class="testimonial-name">Marcos Oliveira</div>
               <div class="testimonial-meta">Curitiba, PR</div>
@@ -3565,7 +3578,7 @@ footer {
 
         <div class="testimonial-card">
           <div class="testimonial-header">
-            <div class="testimonial-avatar"><img src="face-4.jpg" alt="Ana" style="width:100%;height:100%;object-fit:cover;"></div>
+            <div class="testimonial-avatar"><img loading="lazy" src="face-4.jpg" alt="Ana" style="width:100%;height:100%;object-fit:cover;"></div>
             <div class="testimonial-info">
               <div class="testimonial-name">Ana Beatriz Costa</div>
               <div class="testimonial-meta">Fortaleza, CE</div>
@@ -3578,7 +3591,7 @@ footer {
 
         <div class="testimonial-card">
           <div class="testimonial-header">
-            <div class="testimonial-avatar"><img src="face-5.jpg" alt="Paulo" style="width:100%;height:100%;object-fit:cover;"></div>
+            <div class="testimonial-avatar"><img loading="lazy" src="face-5.jpg" alt="Paulo" style="width:100%;height:100%;object-fit:cover;"></div>
             <div class="testimonial-info">
               <div class="testimonial-name">Pedro Henrique Santos</div>
               <div class="testimonial-meta">Goiânia, GO</div>
@@ -3591,7 +3604,7 @@ footer {
 
         <div class="testimonial-card">
           <div class="testimonial-header">
-            <div class="testimonial-avatar"><img src="face-6.jpg" alt="Larissa" style="width:100%;height:100%;object-fit:cover;"></div>
+            <div class="testimonial-avatar"><img loading="lazy" src="face-6.jpg" alt="Larissa" style="width:100%;height:100%;object-fit:cover;"></div>
             <div class="testimonial-info">
               <div class="testimonial-name">Larissa Mendes</div>
               <div class="testimonial-meta">Florianópolis, SC</div>
@@ -3604,7 +3617,7 @@ footer {
 
         <div class="testimonial-card">
           <div class="testimonial-header">
-            <div class="testimonial-avatar"><img src="face-7.jpg" alt="João" style="width:100%;height:100%;object-fit:cover;"></div>
+            <div class="testimonial-avatar"><img loading="lazy" src="face-7.jpg" alt="João" style="width:100%;height:100%;object-fit:cover;"></div>
             <div class="testimonial-info">
               <div class="testimonial-name">João Carlos Lima</div>
               <div class="testimonial-meta">Ribeirão Preto, SP</div>
@@ -3617,7 +3630,7 @@ footer {
 
         <div class="testimonial-card">
           <div class="testimonial-header">
-            <div class="testimonial-avatar"><img src="face-8.jpg" alt="Fernanda" style="width:100%;height:100%;object-fit:cover;"></div>
+            <div class="testimonial-avatar"><img loading="lazy" src="face-8.jpg" alt="Fernanda" style="width:100%;height:100%;object-fit:cover;"></div>
             <div class="testimonial-info">
               <div class="testimonial-name">Fernanda Rocha</div>
               <div class="testimonial-meta">Salvador, BA</div>
@@ -5312,7 +5325,8 @@ document.querySelectorAll('#calc-economia .reveal').forEach(function(el) { revea
   const container = document.getElementById('particles');
   if (!container) return;
   const colors = ['rgba(212,168,67,0.3)', 'rgba(31,216,164,0.2)', 'rgba(240,201,107,0.25)'];
-  for (let i = 0; i < 25; i++) {
+  const pCount = window.innerWidth < 768 ? 8 : 25;
+  for (let i = 0; i < pCount; i++) {
     const p = document.createElement('div');
     p.className = 'particle';
     const size = Math.random() * 4 + 2;
@@ -5332,7 +5346,8 @@ document.querySelectorAll('#calc-economia .reveal').forEach(function(el) { revea
   const container = document.getElementById('energyOrbs');
   if (!container) return;
   const types = ['orb--gold','orb--green','orb--white','orb--orange','orb--blue'];
-  const total = 250;
+  const isMobile = window.innerWidth < 768;
+  const total = isMobile ? 20 : 120;
 
   for (let i = 0; i < total; i++) {
     const orb = document.createElement('div');

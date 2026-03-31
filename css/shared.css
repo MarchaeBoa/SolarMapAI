@@ -3,7 +3,7 @@
    Reutilizado em todas as páginas (auth, dashboard, landing)
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+/* Google Fonts loaded via <link> in HTML — no duplicate @import needed */
 
 :root {
   --midnight:    #060C14;
