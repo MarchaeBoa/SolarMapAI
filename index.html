@@ -2343,11 +2343,9 @@ footer {
 
 /* ══ MOBILE PERFORMANCE ══ */
 @media (max-width: 768px) {
-  *, *::before, *::after { backdrop-filter: blur(4px) !important; -webkit-backdrop-filter: blur(4px) !important; }
-  .energy-orbs .orb { animation-duration: 20s !important; }
-  .cosmic-stars { opacity: 0.3 !important; }
-  .particle { display: none !important; }
-  #solzinhoFloat { display: none !important; }
+  *, *::before, *::after { backdrop-filter: blur(6px) !important; -webkit-backdrop-filter: blur(6px) !important; }
+  .energy-orbs .orb { animation-duration: 18s !important; }
+  .cosmic-stars { opacity: 0.6 !important; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -5347,7 +5345,7 @@ document.querySelectorAll('#calc-economia .reveal').forEach(function(el) { revea
   if (!container) return;
   const types = ['orb--gold','orb--green','orb--white','orb--orange','orb--blue'];
   const isMobile = window.innerWidth < 768;
-  const total = isMobile ? 20 : 120;
+  const total = isMobile ? 50 : 150;
 
   for (let i = 0; i < total; i++) {
     const orb = document.createElement('div');
