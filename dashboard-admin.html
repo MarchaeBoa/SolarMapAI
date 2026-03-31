@@ -448,8 +448,14 @@
       <a href="dashboard-admin.html" class="dash-nav-item active" style="color:#D4A843;border:1px solid rgba(212,168,67,0.3);background:rgba(212,168,67,0.08);"><span class="dash-nav-icon">🛡️</span> Painel Admin</a>
       <a href="dashboard-perfil.html" class="dash-nav-item"><span class="dash-nav-icon">👤</span> Meu Perfil</a>
     </nav>
-    <div class="dash-sidebar-footer">
-      <div class="dash-user-info" onclick="window.location.href='dashboard-perfil.html'">
+    <div class="dash-sidebar-footer dash-user-popover-wrapper">
+      <div class="dash-user-popover" id="userPopover">
+        <div class="dash-user-popover-plan">Plano <span id="userPlanLabel">Admin</span></div>
+        <a href="dashboard-admin.html" class="dash-admin-btn visible" id="adminBtnPopover">
+          <span>🛡️</span> Painel Admin
+        </a>
+      </div>
+      <div class="dash-user-info" id="userInfoToggle">
         <div class="dash-user-avatar" id="dashUserAvatar">A</div>
         <div>
           <div class="dash-user-name" id="dashUserName">Admin</div>

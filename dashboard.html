@@ -50,8 +50,14 @@
       </a>
     </nav>
 
-    <div class="dash-sidebar-footer">
-      <div class="dash-user-info" onclick="window.location.href='dashboard-perfil.html'">
+    <div class="dash-sidebar-footer dash-user-popover-wrapper">
+      <div class="dash-user-popover" id="userPopover">
+        <div class="dash-user-popover-plan">Plano <span id="userPlanLabel">Free</span></div>
+        <a href="dashboard-admin.html" class="dash-admin-btn" id="adminBtnPopover">
+          <span>🛡️</span> Painel Admin
+        </a>
+      </div>
+      <div class="dash-user-info" id="userInfoToggle">
         <div class="dash-user-avatar" id="dashUserAvatar">U</div>
         <div>
           <div class="dash-user-name" id="dashUserName">Carregando...</div>
