@@ -1,0 +1,313 @@
+/* ============================================================
+   SOLZINHO — Assistente IA Solar Animado
+   ============================================================ */
+
+/* ── CONTAINER (draggable) ── */
+.solzinho-wrap {
+  position: fixed; bottom: 28px; right: 28px; z-index: 8000;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 12px;
+  cursor: grab; user-select: none; touch-action: none;
+}
+.solzinho-wrap.dragging { cursor: grabbing; }
+
+/* Speech bubble */
+.sol-speech {
+  position: absolute; bottom: 85px; right: 0;
+  background: rgba(6,12,20,0.92); backdrop-filter: blur(16px);
+  border: 1px solid rgba(212,168,67,0.3); border-radius: 14px;
+  padding: 10px 16px; color: var(--ice); font-size: 0.85rem;
+  font-weight: 500; white-space: nowrap;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  opacity: 0; transform: translateY(8px) scale(0.9);
+  transition: 0.3s; pointer-events: none;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+.sol-speech.visible { opacity: 1; transform: translateY(0) scale(1); }
+.sol-speech::after {
+  content: ''; position: absolute; bottom: -8px; right: 30px;
+  width: 0; height: 0;
+  border-left: 8px solid transparent; border-right: 8px solid transparent;
+  border-top: 8px solid rgba(6,12,20,0.92);
+}
+
+/* Extra face expressions */
+.solzinho.wink .sol-eye:first-child { height: 2px; border-radius: 50%; }
+.solzinho.wink .sol-mouth { width: 14px; height: 6px; transform: translateX(-50%) rotate(-8deg); }
+
+.solzinho.crazy .sol-eye:first-child { transform: rotate(15deg) scale(1.3); }
+.solzinho.crazy .sol-eye:last-child { transform: rotate(-15deg) scale(0.7); }
+.solzinho.crazy .sol-mouth { width: 20px; height: 12px; border-radius: 50%; transform: translateX(-50%) rotate(10deg); }
+.solzinho.crazy .sol-rays { animation-duration: 2s !important; }
+.solzinho.crazy { animation: solCrazy 0.3s ease infinite; }
+@keyframes solCrazy { 0%,100%{transform:rotate(0)} 25%{transform:rotate(5deg)} 75%{transform:rotate(-5deg)} }
+
+.solzinho.love .sol-eye { background: #FF4D6A; width: 10px; height: 9px; clip-path: path('M5 2C5 0 3-1 2 1L5 4 8 1C7-1 5 0 5 2Z'); border-radius: 0; }
+.solzinho.love .sol-eye::after { display: none; }
+.solzinho.love .sol-mouth { width: 18px; height: 9px; }
+.solzinho.love .sol-face { box-shadow: 0 0 40px rgba(255,77,106,0.4), inset 0 -4px 8px rgba(180,130,40,0.3); }
+
+.solzinho.dizzy .sol-eye { animation: dizzyEye 0.5s linear infinite; }
+@keyframes dizzyEye { 0%{transform:translateX(0)} 25%{transform:translateX(3px)} 50%{transform:translateX(0)} 75%{transform:translateX(-3px)} }
+.solzinho.dizzy .sol-mouth { width: 14px; height: 14px; border-radius: 50%; }
+.solzinho.dizzy { animation: dizzyShake 0.4s ease infinite; }
+@keyframes dizzyShake { 0%,100%{transform:translateX(0)} 50%{transform:translateX(4px)} }
+
+.solzinho.tongue .sol-mouth { height: 14px; width: 14px; border-radius: 0 0 50% 50%; overflow: visible; }
+.solzinho.tongue .sol-mouth::after {
+  content: ''; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%);
+  width: 8px; height: 10px; background: #FF6B8A; border-radius: 0 0 50% 50%;
+}
+
+.solzinho.angry .sol-eye { transform: rotate(-15deg); }
+.solzinho.angry .sol-eye:last-child { transform: rotate(15deg); }
+.solzinho.angry .sol-mouth { width: 12px; height: 3px; border-radius: 0; transform: translateX(-50%) rotate(-5deg); }
+.solzinho.angry .sol-face { box-shadow: 0 0 30px rgba(255,80,50,0.5), inset 0 -4px 8px rgba(180,130,40,0.3); }
+.solzinho.angry .sol-rays { filter: hue-rotate(-20deg) brightness(1.2); }
+
+/* ── PERSONAGEM ── */
+.solzinho {
+  width: 72px; height: 72px; position: relative; cursor: pointer;
+  transition: transform 0.3s; filter: drop-shadow(0 4px 20px rgba(212,168,67,0.5));
+}
+.solzinho:hover { transform: scale(1.1); }
+.solzinho.bounce { animation: solBounce 0.5s ease; }
+@keyframes solBounce { 0%,100%{transform:translateY(0)} 30%{transform:translateY(-14px)} 60%{transform:translateY(-6px)} }
+
+/* Face (circle) */
+.sol-face {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #FFE082, #F0C96B 40%, #D4A843 100%);
+  position: relative; z-index: 2;
+  box-shadow: 0 0 30px rgba(240,201,107,0.6), inset 0 -4px 8px rgba(180,130,40,0.3);
+  animation: solFloat 3s ease-in-out infinite;
+}
+@keyframes solFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+
+/* Eyes */
+.sol-eyes {
+  position: absolute; top: 26px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 14px; z-index: 3;
+}
+.sol-eye {
+  width: 8px; height: 10px; border-radius: 50%;
+  background: #4A3000; position: relative;
+}
+.sol-eye::after {
+  content: ''; position: absolute; top: 1px; left: 2px;
+  width: 3px; height: 3px; border-radius: 50%; background: white;
+}
+/* Blink */
+.solzinho.idle .sol-eye { animation: solBlink 3s ease-in-out infinite; }
+@keyframes solBlink {
+  0%,42%,46%,100% { height: 10px; }
+  44% { height: 2px; border-radius: 50%; }
+}
+/* Thinking eyes */
+.solzinho.thinking .sol-eye { animation: solThinkEye 1s linear infinite; }
+@keyframes solThinkEye { 0%{transform:rotate(0)} 100%{transform:rotate(360deg)} }
+/* Surprised eyes */
+.solzinho.surprised .sol-eye { width: 12px; height: 14px; transition: 0.2s; }
+/* Sleeping eyes */
+.solzinho.sleeping .sol-eye { height: 2px; border-radius: 50%; }
+/* Happy eyes */
+.solzinho.happy .sol-eye { height: 3px; border-radius: 0 0 50% 50%; width: 10px; }
+
+/* Mouth */
+.sol-mouth {
+  position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%);
+  width: 16px; height: 8px; border-radius: 0 0 50% 50%;
+  background: #4A3000; z-index: 3; transition: 0.2s;
+}
+/* Talking mouth */
+.solzinho.talking .sol-mouth { animation: solTalk 0.3s ease-in-out infinite alternate; }
+@keyframes solTalk { 0%{height:6px;width:14px} 100%{height:12px;width:18px} }
+/* Happy mouth */
+.solzinho.happy .sol-mouth { width: 20px; height: 10px; }
+/* Surprised mouth */
+.solzinho.surprised .sol-mouth { width: 12px; height: 12px; border-radius: 50%; }
+/* Sleeping mouth */
+.solzinho.sleeping .sol-mouth { width: 10px; height: 2px; border-radius: 50%; bottom: 22px; }
+/* Thinking mouth */
+.solzinho.thinking .sol-mouth { width: 8px; height: 2px; border-radius: 50%; bottom: 20px; transform: translateX(-50%) rotate(10deg); }
+
+/* Sun rays */
+.sol-rays {
+  position: absolute; inset: -12px; z-index: 1;
+  animation: solRaysSpin 20s linear infinite;
+}
+@keyframes solRaysSpin { to { transform: rotate(360deg); } }
+.sol-ray {
+  position: absolute; width: 4px; height: 14px;
+  background: linear-gradient(to top, rgba(240,201,107,0.8), transparent);
+  border-radius: 2px; left: 50%; top: 0;
+  transform-origin: center 48px;
+}
+.sol-ray:nth-child(1) { transform: rotate(0deg); }
+.sol-ray:nth-child(2) { transform: rotate(30deg); }
+.sol-ray:nth-child(3) { transform: rotate(60deg); }
+.sol-ray:nth-child(4) { transform: rotate(90deg); }
+.sol-ray:nth-child(5) { transform: rotate(120deg); }
+.sol-ray:nth-child(6) { transform: rotate(150deg); }
+.sol-ray:nth-child(7) { transform: rotate(180deg); }
+.sol-ray:nth-child(8) { transform: rotate(210deg); }
+.sol-ray:nth-child(9) { transform: rotate(240deg); }
+.sol-ray:nth-child(10) { transform: rotate(270deg); }
+.sol-ray:nth-child(11) { transform: rotate(300deg); }
+.sol-ray:nth-child(12) { transform: rotate(330deg); }
+
+/* Happy rays glow */
+.solzinho.happy .sol-rays { filter: brightness(1.4); animation-duration: 8s; }
+.solzinho.thinking .sol-rays { animation-duration: 4s; filter: brightness(0.7); }
+.solzinho.sleeping .sol-rays { animation-play-state: paused; filter: brightness(0.4); }
+
+/* Thinking bubbles */
+.sol-think-bubbles {
+  position: absolute; top: -30px; right: -10px; display: none;
+}
+.solzinho.thinking .sol-think-bubbles { display: block; }
+.sol-bubble {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(240,201,107,0.5); position: absolute;
+  animation: solBubble 1.5s ease-in-out infinite;
+}
+.sol-bubble:nth-child(1) { bottom: 0; right: 0; animation-delay: 0s; }
+.sol-bubble:nth-child(2) { bottom: 12px; right: 8px; width: 10px; height: 10px; animation-delay: 0.3s; }
+.sol-bubble:nth-child(3) { bottom: 26px; right: 14px; width: 12px; height: 12px; animation-delay: 0.6s; }
+@keyframes solBubble { 0%,100%{opacity:0.3;transform:scale(0.8)} 50%{opacity:1;transform:scale(1.2)} }
+
+/* Tooltip */
+.sol-tooltip {
+  position: absolute; bottom: 80px; right: 0;
+  background: rgba(6,12,20,0.92); backdrop-filter: blur(16px);
+  border: 1px solid rgba(212,168,67,0.3); border-radius: 14px;
+  padding: 10px 16px; color: var(--ice); font-size: 0.82rem;
+  white-space: nowrap; opacity: 0; transform: translateY(8px);
+  transition: 0.3s; pointer-events: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+.solzinho:hover + .sol-tooltip, .sol-tooltip.visible { opacity: 1; transform: translateY(0); }
+
+/* ── CHAT WINDOW ── */
+.sol-chat {
+  width: 380px; max-height: 520px; display: none;
+  background: rgba(6,12,20,0.94); backdrop-filter: blur(24px);
+  border: 1px solid rgba(212,168,67,0.2); border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 40px rgba(212,168,67,0.08);
+  overflow: hidden; flex-direction: column;
+  animation: chatOpen 0.35s ease-out;
+}
+.sol-chat.open { display: flex; }
+@keyframes chatOpen { from{opacity:0;transform:translateY(20px) scale(0.95)} to{opacity:1;transform:translateY(0) scale(1)} }
+
+.sol-chat-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 16px 20px; border-bottom: 1px solid rgba(238,244,255,0.06);
+  background: rgba(212,168,67,0.06);
+}
+.sol-chat-header-icon {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: radial-gradient(circle, #FFE082, #D4A843);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.9rem; box-shadow: 0 0 12px rgba(212,168,67,0.4);
+}
+.sol-chat-header-text h4 {
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.92rem;
+  font-weight: 700; color: var(--ice); margin: 0;
+}
+.sol-chat-header-text span { font-size: 0.72rem; color: var(--green); }
+.sol-chat-close {
+  margin-left: auto; background: none; border: none;
+  color: var(--muted); font-size: 1.3rem; cursor: pointer;
+  transition: 0.2s;
+}
+.sol-chat-close:hover { color: var(--ice); }
+
+/* Messages */
+.sol-chat-messages {
+  flex: 1; overflow-y: auto; padding: 16px 20px;
+  display: flex; flex-direction: column; gap: 12px;
+  max-height: 340px; scrollbar-width: thin;
+  scrollbar-color: rgba(212,168,67,0.3) transparent;
+}
+.sol-msg {
+  display: flex; gap: 10px; align-items: flex-start;
+  animation: msgIn 0.3s ease-out;
+}
+@keyframes msgIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.sol-msg.user { flex-direction: row-reverse; }
+.sol-msg-avatar {
+  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem;
+}
+.sol-msg-avatar.bot {
+  background: radial-gradient(circle, #FFE082, #D4A843);
+  box-shadow: 0 0 8px rgba(212,168,67,0.3);
+}
+.sol-msg-avatar.user-av {
+  background: rgba(59,158,255,0.2); color: #5AAFFF;
+  border: 1px solid rgba(59,158,255,0.3);
+  font-weight: 700;
+}
+.sol-msg-bubble {
+  padding: 10px 14px; border-radius: 14px;
+  font-size: 0.85rem; line-height: 1.55; max-width: 280px;
+}
+.sol-msg .sol-msg-bubble {
+  background: rgba(238,244,255,0.06); color: var(--ice);
+  border: 1px solid rgba(238,244,255,0.06);
+  border-top-left-radius: 4px;
+}
+.sol-msg.user .sol-msg-bubble {
+  background: rgba(212,168,67,0.12); color: var(--ice);
+  border: 1px solid rgba(212,168,67,0.15);
+  border-top-right-radius: 4px;
+}
+
+/* Typing indicator */
+.sol-typing { display: flex; gap: 4px; padding: 4px 0; }
+.sol-typing span {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--gold); animation: typingDot 1.2s ease-in-out infinite;
+}
+.sol-typing span:nth-child(2) { animation-delay: 0.2s; }
+.sol-typing span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typingDot { 0%,100%{opacity:0.3;transform:scale(0.8)} 50%{opacity:1;transform:scale(1.2)} }
+
+/* Input */
+.sol-chat-input {
+  display: flex; gap: 8px; padding: 14px 16px;
+  border-top: 1px solid rgba(238,244,255,0.06);
+  background: rgba(238,244,255,0.02);
+}
+.sol-chat-input input {
+  flex: 1; padding: 10px 16px; border-radius: 12px;
+  background: rgba(238,244,255,0.06); border: 1px solid rgba(238,244,255,0.1);
+  color: var(--ice); font-family: 'Inter', sans-serif; font-size: 0.88rem;
+  outline: none; transition: 0.2s;
+}
+.sol-chat-input input:focus { border-color: var(--gold); }
+.sol-chat-input input::placeholder { color: rgba(238,244,255,0.3); }
+.sol-chat-input button {
+  width: 40px; height: 40px; border-radius: 12px; border: none;
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  color: var(--midnight); font-size: 1rem; cursor: pointer;
+  transition: 0.2s; display: flex; align-items: center; justify-content: center;
+}
+.sol-chat-input button:hover { transform: scale(1.05); box-shadow: 0 4px 16px rgba(212,168,67,0.4); }
+
+/* Notification badge */
+.sol-badge {
+  position: absolute; top: -4px; right: -4px; z-index: 5;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--green); border: 2px solid var(--midnight);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.6rem; font-weight: 800; color: var(--midnight);
+  animation: badgePop 0.3s ease-out;
+}
+@keyframes badgePop { from{transform:scale(0)} to{transform:scale(1)} }
+
+@media (max-width: 480px) {
+  .sol-chat { width: calc(100vw - 40px); right: 0; }
+  .solzinho-wrap { bottom: 16px; right: 16px; }
+}
