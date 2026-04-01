@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analisador de Conta — SolarMap AI</title>
+<link rel="stylesheet" href="css/shared.css">
+<link rel="stylesheet" href="css/dashboard.css">
+<link rel="stylesheet" href="css/solzinho.css">
+<style>
+/* ── Analisador Layout ── */
+.an-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+@media(max-width:900px) { .an-grid { grid-template-columns: 1fr; } }
+
+.an-card {
+  background: rgba(6,12,20,0.6); backdrop-filter: blur(12px);
+  border: 1px solid rgba(238,244,255,0.08); border-radius: 18px;
+  padding: 28px; position: relative;
+}
+.an-card h3 {
+  font-size: 1rem; font-weight: 700; color: var(--ice);
+  margin: 0 0 20px 0; display: flex; align-items: center; gap: 8px;
+}
+
+/* Upload zone */
+.an-upload-zone {
+  border: 2px dashed rgba(212,168,67,0.3); border-radius: 16px;
+  padding: 30px; text-align: center; cursor: pointer;
+  transition: 0.2s; margin-bottom: 20px;
+}
+.an-upload-zone:hover { border-color: var(--gold); background: rgba(212,168,67,0.04); }
+.an-upload-zone .icon { font-size: 2.5rem; margin-bottom: 8px; }
+.an-upload-zone h4 { color: var(--ice); margin-bottom: 4px; }
+.an-upload-zone p { color: var(--muted); font-size: 0.82rem; }
+.an-preview {
+  position: relative; border-radius: 12px; overflow: hidden;
+  margin-bottom: 20px; max-height: 300px; display: none;
+}
+.an-preview img { width: 100%; height: auto; max-height: 300px; object-fit: contain; display: block; }
+.an-preview-remove {
+  position: absolute; top: 8px; right: 8px;
+  background: rgba(255,68,68,0.9); border: none; color: #fff;
+  width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+  font-size: 0.9rem; display: flex; align-items: center; justify-content: center;
+}
+.an-pdf-badge {
+  display: flex; align-items: center; gap: 10px; padding: 14px;
+  background: rgba(90,158,255,0.08); border: 1px solid rgba(90,158,255,0.2);
+  border-radius: 12px; margin-bottom: 20px;
+}
+.an-pdf-badge .pdf-icon { font-size: 1.5rem; }
+.an-pdf-badge .pdf-name { color: var(--ice); font-weight: 600; font-size: 0.88rem; }
+.an-pdf-badge .pdf-size { color: var(--muted); font-size: 0.75rem; }
+
+/* Form */
+.an-field { margin-bottom: 14px; }
+.an-field label {
+  display: block; font-size: 0.78rem; font-weight: 600;
+  color: var(--gold); margin-bottom: 4px; text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.an-input {
+  width: 100%; padding: 11px 14px; border-radius: 10px;
+  border: 1px solid rgba(238,244,255,0.12);
+  background: rgba(6,12,20,0.6); color: var(--ice);
+  font-size: 0.88rem; font-family: inherit; transition: 0.2s;
+}
+.an-input:focus { border-color: var(--gold); outline: none; box-shadow: 0 0 0 2px rgba(212,168,67,0.15); }
+.an-input::placeholder { color: rgba(238,244,255,0.3); }
+select.an-input { cursor: pointer; }
+.an-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* Required highlight */
+.an-field.required label::after { content: ' *'; color: #ff6b6b; }
+
+/* Calculate button */
+.an-btn-calc {
+  width: 100%; padding: 16px; border: none; border-radius: 14px;
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  color: var(--midnight); font-weight: 800; font-size: 1rem;
+  font-family: inherit; cursor: pointer; transition: 0.2s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  margin-top: 8px;
+}
+.an-btn-calc:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(212,168,67,0.4); }
+
+/* ── Results ── */
+.an-results { display: none; }
+.an-results.visible { display: block; animation: anFadeIn 0.5s ease-out; }
+@keyframes anFadeIn { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+
+.an-res-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px; margin-bottom: 20px;
+}
+.an-res-card {
+  background: rgba(6,12,20,0.5); border: 1px solid rgba(238,244,255,0.06);
+  border-radius: 14px; padding: 16px; text-align: center;
+}
+.an-res-card .res-label {
+  font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.8px;
+  color: var(--muted); margin-bottom: 6px;
+}
+.an-res-card .res-value {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1.3rem; font-weight: 800; color: var(--ice);
+}
+.an-res-card .res-value.gold { color: var(--gold); }
+.an-res-card .res-value.green { color: var(--green); }
+
+/* Recommendation card */
+.an-recommendation {
+  background: linear-gradient(135deg, rgba(31,216,164,0.08), rgba(212,168,67,0.06));
+  border: 1px solid rgba(31,216,164,0.2); border-radius: 16px;
+  padding: 20px; margin-bottom: 20px;
+}
+.an-recommendation h4 { color: var(--green); margin: 0 0 10px; font-size: 0.95rem; }
+.an-rec-details {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  font-size: 0.85rem;
+}
+.an-rec-item { display: flex; justify-content: space-between; }
+.an-rec-item span:first-child { color: var(--muted); }
+.an-rec-item span:last-child { color: var(--ice); font-weight: 600; }
+
+/* Tariff note */
+.an-tariff-note {
+  background: rgba(90,158,255,0.08); border: 1px solid rgba(90,158,255,0.15);
+  border-radius: 10px; padding: 10px 14px; font-size: 0.78rem;
+  color: #5AAFFF; margin-bottom: 16px;
+}
+
+/* Action buttons */
+.an-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.an-action-btn {
+  flex: 1; min-width: 140px; padding: 12px 16px; border-radius: 12px;
+  font-weight: 700; font-size: 0.85rem; font-family: inherit;
+  cursor: pointer; transition: 0.2s; text-align: center;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.an-btn-save {
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  color: var(--midnight); border: none;
+}
+.an-btn-save:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(212,168,67,0.3); }
+.an-btn-budget {
+  background: rgba(31,216,164,0.12); color: var(--green);
+  border: 1px solid rgba(31,216,164,0.25);
+}
+.an-btn-budget:hover { background: rgba(31,216,164,0.2); }
+.an-btn-reset {
+  background: rgba(238,244,255,0.06); color: var(--muted);
+  border: 1px solid rgba(238,244,255,0.1);
+}
+.an-btn-reset:hover { background: rgba(238,244,255,0.1); color: var(--ice); }
+
+/* History table */
+.an-history { margin-top: 24px; }
+.an-alert {
+  padding: 12px; border-radius: 10px; font-size: 0.85rem;
+  margin-bottom: 16px; display: none;
+}
+.an-alert.success { display: block; background: rgba(31,216,164,0.1); color: var(--green); border: 1px solid rgba(31,216,164,0.2); }
+</style>
+</head>
+<body>
+
+<div class="cosmic-bg"></div>
+<div class="cosmic-stars"></div>
+<div class="energy-orbs" id="energyOrbs"></div>
+<button class="dash-mobile-toggle" onclick="toggleDashSidebar()">☰</button>
+
+<div class="dash-layout">
+  <aside class="dash-sidebar">
+    <a href="dashboard.html" class="dash-sidebar-logo">
+      <div class="dash-sidebar-logo-icon"><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="24" r="10" fill="#1a1400" fill-opacity="0.85"/><circle cx="24" cy="24" r="8.5" fill="none" stroke="#1a1400" stroke-width="0.8" stroke-opacity="0.3"/><path d="M24 2v7M24 39v7M46 24h-7M9 24H2M39.8 8.2l-5 5M13.2 34.8l-5 5M39.8 39.8l-5-5M13.2 13.2l-5-5" stroke="#1a1400" stroke-width="2.8" stroke-linecap="round" stroke-opacity="0.85"/><circle cx="24" cy="24" r="7" fill="#1a1400" fill-opacity="0.15"/></svg></div>
+      <div class="dash-sidebar-logo-text">Solar<span>Map</span> AI</div>
+    </a>
+    <nav class="dash-nav">
+      <div class="dash-nav-section">Principal</div>
+      <a href="dashboard.html" class="dash-nav-item"><span class="dash-nav-icon">📊</span> Painel Geral</a>
+      <a href="dashboard-simulador.html" class="dash-nav-item"><span class="dash-nav-icon">☀️</span> Simulador</a>
+      <a href="dashboard-analisador.html" class="dash-nav-item active"><span class="dash-nav-icon">📄</span> Analisador de Conta</a>
+      <div class="dash-nav-section">Gestão</div>
+      <a href="dashboard-projetos.html" class="dash-nav-item"><span class="dash-nav-icon">📁</span> Projetos</a>
+      <a href="dashboard-orcamentos.html" class="dash-nav-item"><span class="dash-nav-icon">💰</span> Orçamentos</a>
+      <a href="dashboard-maoobra.html" class="dash-nav-item"><span class="dash-nav-icon">👷</span> Mão de Obra</a>
+      <div class="dash-nav-section">Conta</div>
+      <a href="dashboard-admin.html" class="dash-nav-item" id="adminLink" style="display:none;color:#D4A843;border:1px solid rgba(212,168,67,0.3);background:rgba(212,168,67,0.08);"><span class="dash-nav-icon">🛡️</span> Painel Admin</a>
+      <a href="dashboard-perfil.html" class="dash-nav-item"><span class="dash-nav-icon">👤</span> Meu Perfil</a>
+    </nav>
+    <div class="dash-sidebar-footer dash-user-popover-wrapper">
+      <div class="dash-user-popover" id="userPopover">
+        <div class="dash-user-popover-plan">Plano <span id="userPlanLabel">Free</span></div>
+        <a href="dashboard-admin.html" class="dash-admin-btn" id="adminBtnPopover"><span>🛡️</span> Painel Admin</a>
+      </div>
+      <div class="dash-user-info" id="userInfoToggle">
+        <div class="dash-user-avatar" id="dashUserAvatar">U</div>
+        <div>
+          <div class="dash-user-name" id="dashUserName">Carregando...</div>
+          <div class="dash-user-email" id="dashUserEmail"></div>
+        </div>
+      </div>
+      <button class="dash-logout" onclick="authSignOut()"><span>🚪</span> Sair da conta</button>
+    </div>
+  </aside>
+
+  <main class="dash-main">
+    <div class="dash-header">
+      <div class="dash-header-left">
+        <h1>Analisador de Conta de Luz</h1>
+        <p>Faça upload da sua conta e descubra quantos painéis você precisa</p>
+      </div>
+      <button class="btn-primary" onclick="anReset()">🔄 Nova Análise</button>
+    </div>
+
+    <div id="anAlert" class="an-alert"></div>
+
+    <div class="an-grid">
+      <!-- LEFT: Upload + Form -->
+      <div class="an-card">
+        <h3>📄 Dados da Conta de Energia</h3>
+
+        <!-- Upload -->
+        <label class="an-upload-zone" id="anUploadZone" for="anFileInput">
+          <div class="icon">📷</div>
+          <h4>Envie a foto da conta de luz</h4>
+          <p>JPG, PNG ou PDF — clique ou arraste aqui</p>
+        </label>
+        <input type="file" id="anFileInput" accept=".jpg,.jpeg,.png,.pdf" style="display:none;" onchange="anHandleUpload(event)">
+
+        <div class="an-preview" id="anPreview">
+          <img id="anPreviewImg">
+          <button class="an-preview-remove" onclick="anRemoveFile()">✕</button>
+        </div>
+        <div class="an-pdf-badge" id="anPdfBadge" style="display:none;">
+          <span class="pdf-icon">📄</span>
+          <div>
+            <div class="pdf-name" id="anPdfName">documento.pdf</div>
+            <div class="pdf-size" id="anPdfSize">0 KB</div>
+          </div>
+          <button class="an-preview-remove" onclick="anRemoveFile()" style="position:static;">✕</button>
+        </div>
+
+        <!-- Form Fields -->
+        <div class="an-field required">
+          <label>Consumo mensal (kWh)</label>
+          <input type="number" class="an-input" id="anKwh" placeholder="Ex: 350" min="1" max="99999" oninput="anAutoCalc()">
+        </div>
+        <div class="an-field required">
+          <label>Valor da conta (R$)</label>
+          <input type="number" class="an-input" id="anBillValue" placeholder="Ex: 280.00" min="1" step="0.01" oninput="anAutoCalc()">
+        </div>
+        <div class="an-row">
+          <div class="an-field required">
+            <label>Estado</label>
+            <select class="an-input" id="anState" onchange="anAutoCalc()">
+              <option value="">Selecione</option>
+              <option value="AC">Acre</option><option value="AL">Alagoas</option><option value="AP">Amapá</option>
+              <option value="AM">Amazonas</option><option value="BA">Bahia</option><option value="CE">Ceará</option>
+              <option value="DF">Distrito Federal</option><option value="ES">Espírito Santo</option><option value="GO">Goiás</option>
+              <option value="MA">Maranhão</option><option value="MT">Mato Grosso</option><option value="MS" selected>Mato Grosso do Sul</option>
+              <option value="MG">Minas Gerais</option><option value="PA">Pará</option><option value="PB">Paraíba</option>
+              <option value="PR">Paraná</option><option value="PE">Pernambuco</option><option value="PI">Piauí</option>
+              <option value="RJ">Rio de Janeiro</option><option value="RN">Rio Grande do Norte</option><option value="RS">Rio Grande do Sul</option>
+              <option value="RO">Rondônia</option><option value="RR">Roraima</option><option value="SC">Santa Catarina</option>
+              <option value="SP">São Paulo</option><option value="SE">Sergipe</option><option value="TO">Tocantins</option>
+            </select>
+          </div>
+          <div class="an-field">
+            <label>Cidade</label>
+            <input type="text" class="an-input" id="anCity" placeholder="Ex: Campo Grande">
+          </div>
+        </div>
+        <div class="an-row">
+          <div class="an-field">
+            <label>Tipo de conexão</label>
+            <select class="an-input" id="anConnection" onchange="anAutoCalc()">
+              <option value="mono">Monofásico (mín. 30 kWh)</option>
+              <option value="bi">Bifásico (mín. 50 kWh)</option>
+              <option value="tri">Trifásico (mín. 100 kWh)</option>
+            </select>
+          </div>
+          <div class="an-field">
+            <label>Modelo de painel</label>
+            <select class="an-input" id="anPanelModel" onchange="anAutoCalc()">
+              <option value="auto">🤖 Auto-selecionar</option>
+              <option value="mono-400">Mono 400W — R$ 850</option>
+              <option value="bi-450">Bifacial 450W — R$ 1.100</option>
+              <option value="poly-350">Poli 350W — R$ 650</option>
+              <option value="mono-550">Premium 550W — R$ 1.350</option>
+              <option value="mono-600">Ultra 600W — R$ 1.600</option>
+              <option value="compact-400">Compacto 400W — R$ 780</option>
+            </select>
+          </div>
+        </div>
+        <div class="an-field">
+          <label>Nome do cliente (opcional)</label>
+          <input type="text" class="an-input" id="anClientName" placeholder="Ex: João Silva">
+        </div>
+
+        <button class="an-btn-calc" onclick="anCalculate()">⚡ Calcular Economia Solar</button>
+      </div>
+
+      <!-- RIGHT: Preview + Quick Info -->
+      <div>
+        <div class="an-card" id="anQuickInfo" style="text-align:center;padding:40px;">
+          <div style="font-size:3rem;margin-bottom:12px;">⚡</div>
+          <h3 style="justify-content:center;">Como funciona?</h3>
+          <div style="text-align:left;color:var(--muted);font-size:0.88rem;line-height:1.8;">
+            <p>1️⃣ Faça upload da sua conta de luz (opcional)</p>
+            <p>2️⃣ Informe o consumo em kWh e valor da conta</p>
+            <p>3️⃣ Selecione estado e tipo de conexão</p>
+            <p>4️⃣ Clique em "Calcular" e veja o resultado</p>
+            <p style="margin-top:12px;color:var(--gold);font-weight:600;">💡 O sistema calcula automaticamente o número ideal de painéis considerando a irradiação solar da sua região e o mínimo da ANEEL.</p>
+          </div>
+        </div>
+
+        <!-- History (shows after first save) -->
+        <div class="an-history" id="anHistory" style="display:none;">
+          <div class="an-card">
+            <h3>📋 Análises Salvas</h3>
+            <div id="anHistoryList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESULTS (hidden until calculated) -->
+    <div class="an-results" id="anResults">
+      <div class="an-card" style="border-color:rgba(212,168,67,0.2);">
+        <h3>📊 Resultado da Análise</h3>
+
+        <div id="anTariffNote" class="an-tariff-note" style="display:none;"></div>
+
+        <div class="an-res-grid">
+          <div class="an-res-card">
+            <div class="res-label">Consumo mensal</div>
+            <div class="res-value" id="rKwh">—</div>
+          </div>
+          <div class="an-res-card">
+            <div class="res-label">Consumo compensável</div>
+            <div class="res-value green" id="rCompensable">—</div>
+          </div>
+          <div class="an-res-card">
+            <div class="res-label">Painéis necessários</div>
+            <div class="res-value gold" id="rPanels">—</div>
+          </div>
+          <div class="an-res-card">
+            <div class="res-label">Potência do sistema</div>
+            <div class="res-value gold" id="rKwp">—</div>
+          </div>
+          <div class="an-res-card">
+            <div class="res-label">Geração mensal</div>
+            <div class="res-value green" id="rGen">—</div>
+          </div>
+          <div class="an-res-card">
+            <div class="res-label">Economia mensal</div>
+            <div class="res-value green" id="rSaveMonth">—</div>
+          </div>
+          <div class="an-res-card">
+            <div class="res-label">Economia anual</div>
+            <div class="res-value green" id="rSaveYear">—</div>
+          </div>
+          <div class="an-res-card">
+            <div class="res-label">Investimento estimado</div>
+            <div class="res-value gold" id="rInvestment">—</div>
+          </div>
+          <div class="an-res-card">
+            <div class="res-label">Payback</div>
+            <div class="res-value" id="rPayback">—</div>
+          </div>
+          <div class="an-res-card">
+            <div class="res-label">CO₂ evitado/ano</div>
+            <div class="res-value green" id="rCO2">—</div>
+          </div>
+        </div>
+
+        <!-- Panel recommendation -->
+        <div class="an-recommendation" id="anRecommendation">
+          <h4>☀️ Painel Recomendado</h4>
+          <div class="an-rec-details" id="anRecDetails"></div>
+        </div>
+
+        <!-- Actions -->
+        <div class="an-actions">
+          <button class="an-action-btn an-btn-save" onclick="anSave()">💾 Salvar Análise</button>
+          <button class="an-action-btn an-btn-budget" onclick="anGenerateBudget()">💰 Gerar Orçamento</button>
+          <button class="an-action-btn an-btn-reset" onclick="anReset()">🔄 Nova Análise</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/guard.js"></script>
+<script>
+generateOrbs(150);
+const currentPage = window.location.pathname.split('/').pop();
+document.querySelectorAll('.dash-nav-item').forEach(item => {
+  item.classList.toggle('active', item.getAttribute('href') === currentPage);
+});
+
+// ══════════════════════════════════════
+// CONSTANTS
+// ══════════════════════════════════════
+const IRR = {AC:4.6,AL:5.4,AP:4.5,AM:4.4,BA:5.4,CE:5.5,DF:5.1,ES:4.7,GO:5.2,MA:5.3,MT:5.1,MS:5.0,MG:5.0,PA:4.8,PB:5.5,PR:4.4,PE:5.3,PI:5.6,RJ:4.6,RN:5.7,RS:4.2,RO:4.7,RR:4.5,SC:4.3,SP:4.5,SE:5.3,TO:5.2};
+const TAR = {AC:0.72,AL:0.76,AP:0.70,AM:0.73,BA:0.76,CE:0.74,DF:0.72,ES:0.78,GO:0.73,MA:0.72,MT:0.78,MS:0.76,MG:0.80,PA:0.80,PB:0.73,PR:0.75,PE:0.77,PI:0.70,RJ:0.82,RN:0.74,RS:0.79,RO:0.74,RR:0.72,SC:0.76,SP:0.78,SE:0.75,TO:0.74};
+const PD = {
+  'mono-400':   { w:400, price:850, name:'Monocristalino 400W', pw:1.04, ph:2.10 },
+  'bi-450':     { w:450, price:1100, name:'Bifacial 450W', pw:1.04, ph:2.10 },
+  'poly-350':   { w:350, price:650, name:'Policristalino 350W', pw:0.99, ph:1.96 },
+  'mono-550':   { w:550, price:1350, name:'Premium 550W', pw:1.13, ph:2.28 },
+  'mono-600':   { w:600, price:1600, name:'Ultra 600W', pw:1.20, ph:2.30 },
+  'compact-400':{ w:400, price:780, name:'Compacto 400W', pw:1.00, ph:1.72 }
+};
+const ANEEL_MIN = { mono: 30, bi: 50, tri: 100 };
+const PR = 0.78; // Performance ratio
+
+let anCurrentData = null;
+
+// ══════════════════════════════════════
+// FILE UPLOAD
+// ══════════════════════════════════════
+function anHandleUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  if (file.type === 'application/pdf') {
+    document.getElementById('anUploadZone').style.display = 'none';
+    document.getElementById('anPreview').style.display = 'none';
+    document.getElementById('anPdfBadge').style.display = 'flex';
+    document.getElementById('anPdfName').textContent = file.name;
+    document.getElementById('anPdfSize').textContent = (file.size / 1024).toFixed(0) + ' KB';
+  } else {
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      document.getElementById('anUploadZone').style.display = 'none';
+      document.getElementById('anPdfBadge').style.display = 'none';
+      document.getElementById('anPreview').style.display = 'block';
+      document.getElementById('anPreviewImg').src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+function anRemoveFile() {
+  document.getElementById('anUploadZone').style.display = 'block';
+  document.getElementById('anPreview').style.display = 'none';
+  document.getElementById('anPdfBadge').style.display = 'none';
+  document.getElementById('anFileInput').value = '';
+}
+
+// Drag & drop
+const uploadZone = document.getElementById('anUploadZone');
+if (uploadZone) {
+  uploadZone.addEventListener('dragover', e => { e.preventDefault(); e.stopPropagation(); uploadZone.style.borderColor = 'var(--gold)'; });
+  uploadZone.addEventListener('dragleave', () => { uploadZone.style.borderColor = ''; });
+  uploadZone.addEventListener('drop', e => {
+    e.preventDefault(); e.stopPropagation(); uploadZone.style.borderColor = '';
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      document.getElementById('anFileInput').files = e.dataTransfer.files;
+      anHandleUpload({ target: { files: [file] } });
+    }
+  });
+}
+
+// ══════════════════════════════════════
+// AUTO-SELECT PANEL
+// ══════════════════════════════════════
+function anAutoSelectPanel(kwh) {
+  if (kwh <= 250) return 'compact-400';
+  if (kwh <= 500) return 'mono-400';
+  if (kwh <= 800) return 'mono-550';
+  return 'mono-600';
+}
+
+// ══════════════════════════════════════
+// AUTO CALCULATE (live preview)
+// ══════════════════════════════════════
+function anAutoCalc() {
+  // Optional: could show live preview, but we'll just keep it clean
+}
+
+// ══════════════════════════════════════
+// MAIN CALCULATION
+// ══════════════════════════════════════
+function anCalculate() {
+  const kwh = parseFloat(document.getElementById('anKwh').value);
+  const billValue = parseFloat(document.getElementById('anBillValue').value);
+  const uf = document.getElementById('anState').value;
+  const connection = document.getElementById('anConnection').value;
+  let panelKey = document.getElementById('anPanelModel').value;
+
+  // Validation
+  if (!kwh || kwh <= 0) { alert('Informe o consumo mensal em kWh.'); return; }
+  if (!billValue || billValue <= 0) { alert('Informe o valor da conta.'); return; }
+  if (!uf) { alert('Selecione o estado.'); return; }
+
+  // Auto-select panel
+  if (panelKey === 'auto') panelKey = anAutoSelectPanel(kwh);
+  const panel = PD[panelKey];
+
+  // Irradiance & tariff
+  const irr = IRR[uf] || 4.8;
+  const tableTariff = TAR[uf] || 0.78;
+  const realTariff = kwh > 0 ? billValue / kwh : tableTariff;
+  const tariffUsed = realTariff;
+
+  // ANEEL minimum
+  const minKwh = ANEEL_MIN[connection] || 30;
+  const compensable = Math.max(0, kwh - minKwh);
+
+  // System sizing
+  const kWpNeeded = compensable / (irr * 30 * PR);
+  const panelCount = Math.ceil(kWpNeeded / (panel.w / 1000));
+  const actualKwp = (panelCount * panel.w) / 1000;
+  const monthlyGen = actualKwp * irr * 30 * PR;
+  const monthlySavings = Math.min(monthlyGen, compensable) * tariffUsed;
+  const annualSavings = monthlySavings * 12;
+  const investment = panelCount * panel.price + actualKwp * 800;
+  const payback = annualSavings > 0 ? investment / annualSavings : 0;
+  const co2 = (monthlyGen * 12 * 0.075) / 1000;
+
+  const fmt = n => n.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+  // Tariff note
+  const tariffNote = document.getElementById('anTariffNote');
+  if (Math.abs(realTariff - tableTariff) > 0.10) {
+    tariffNote.style.display = 'block';
+    tariffNote.innerHTML = '💡 Sua tarifa real é <strong>R$ ' + realTariff.toFixed(2) + '/kWh</strong> (média do estado: R$ ' + tableTariff.toFixed(2) + '/kWh). Usamos sua tarifa real para cálculos mais precisos.';
+  } else {
+    tariffNote.style.display = 'none';
+  }
+
+  // Fill results
+  document.getElementById('rKwh').textContent = kwh + ' kWh';
+  document.getElementById('rCompensable').textContent = compensable + ' kWh';
+  document.getElementById('rPanels').textContent = panelCount;
+  document.getElementById('rKwp').textContent = actualKwp.toFixed(1) + ' kWp';
+  document.getElementById('rGen').textContent = fmt(monthlyGen) + ' kWh';
+  document.getElementById('rSaveMonth').textContent = 'R$ ' + fmt(monthlySavings);
+  document.getElementById('rSaveYear').textContent = 'R$ ' + fmt(annualSavings);
+  document.getElementById('rInvestment').textContent = 'R$ ' + fmt(investment);
+  document.getElementById('rPayback').textContent = payback.toFixed(1) + ' anos';
+  document.getElementById('rCO2').textContent = co2.toFixed(2) + ' ton';
+
+  // Recommendation
+  document.getElementById('anRecDetails').innerHTML = `
+    <div class="an-rec-item"><span>Modelo:</span><span>${panel.name}</span></div>
+    <div class="an-rec-item"><span>Potência:</span><span>${panel.w}W</span></div>
+    <div class="an-rec-item"><span>Dimensões:</span><span>${panel.pw} × ${panel.ph} m</span></div>
+    <div class="an-rec-item"><span>Preço unitário:</span><span>R$ ${fmt(panel.price)}</span></div>
+    <div class="an-rec-item"><span>Quantidade:</span><span>${panelCount} painéis</span></div>
+    <div class="an-rec-item"><span>Área necessária:</span><span>${(panelCount * panel.pw * panel.ph).toFixed(1)} m²</span></div>
+  `;
+
+  // Show results
+  document.getElementById('anResults').classList.add('visible');
+  document.getElementById('anResults').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Store data
+  anCurrentData = {
+    clientName: document.getElementById('anClientName').value.trim(),
+    stateUF: uf,
+    city: document.getElementById('anCity').value.trim(),
+    monthlyKwh: kwh,
+    billValue: billValue,
+    connectionType: connection,
+    panelModel: panelKey,
+    panelsRecommended: panelCount,
+    kwpNeeded: actualKwp,
+    monthlyGeneration: monthlyGen,
+    monthlySavings: monthlySavings,
+    annualSavings: annualSavings,
+    investment: investment,
+    paybackYears: payback,
+    co2Avoided: co2
+  };
+}
+
+// ══════════════════════════════════════
+// SAVE, BUDGET, RESET
+// ══════════════════════════════════════
+async function anSave() {
+  if (!anCurrentData) return;
+  try {
+    await saveBillAnalysis(anCurrentData);
+    const alert = document.getElementById('anAlert');
+    alert.className = 'an-alert success';
+    alert.textContent = '✅ Análise salva com sucesso!';
+    setTimeout(() => { alert.className = 'an-alert'; }, 4000);
+    anLoadHistory();
+  } catch (e) {
+    alert('Erro ao salvar: ' + e.message);
+  }
+}
+
+function anGenerateBudget() {
+  if (!anCurrentData) return;
+  localStorage.setItem('prefillBudget', JSON.stringify({
+    source: 'analisador',
+    clientName: anCurrentData.clientName,
+    panelModel: anCurrentData.panelModel,
+    panelCount: anCurrentData.panelsRecommended,
+    state: anCurrentData.stateUF,
+    city: anCurrentData.city,
+    investment: anCurrentData.investment
+  }));
+  window.location.href = 'dashboard-orcamentos.html';
+}
+
+function anReset() {
+  document.getElementById('anKwh').value = '';
+  document.getElementById('anBillValue').value = '';
+  document.getElementById('anCity').value = '';
+  document.getElementById('anClientName').value = '';
+  document.getElementById('anPanelModel').value = 'auto';
+  document.getElementById('anConnection').value = 'mono';
+  document.getElementById('anResults').classList.remove('visible');
+  anRemoveFile();
+  anCurrentData = null;
+}
+
+// ══════════════════════════════════════
+// HISTORY
+// ══════════════════════════════════════
+async function anLoadHistory() {
+  try {
+    const analyses = await getBillAnalyses();
+    if (analyses.length === 0) { document.getElementById('anHistory').style.display = 'none'; return; }
+    document.getElementById('anHistory').style.display = 'block';
+    const fmt = n => 'R$ ' + Number(n).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    document.getElementById('anHistoryList').innerHTML = analyses.slice(0, 5).map(a => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(238,244,255,0.06);font-size:0.85rem;">
+        <div>
+          <strong style="color:var(--ice);">${a.client_name || 'Sem nome'}</strong>
+          <span style="color:var(--muted);margin-left:8px;">${a.monthly_kwh} kWh · ${a.state_uf}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span style="color:var(--gold);font-weight:700;">${a.panels_recommended} painéis</span>
+          <span style="color:var(--green);font-weight:700;">${fmt(a.investment)}</span>
+          <button onclick="anDeleteAnalysis('${a.id}')" style="background:none;border:none;color:#ff6b6b;cursor:pointer;font-size:0.85rem;">🗑️</button>
+        </div>
+      </div>
+    `).join('');
+  } catch (e) { console.error('Erro ao carregar histórico:', e.message); }
+}
+
+async function anDeleteAnalysis(id) {
+  if (!confirm('Excluir esta análise?')) return;
+  try { await deleteBillAnalysis(id); anLoadHistory(); } catch (e) { alert('Erro: ' + e.message); }
+}
+
+// Init
+anLoadHistory();
+</script>
+<script src="js/solzinho.js"></script>
+</body>
+</html>

@@ -111,6 +111,44 @@ async function deleteBudget(id) {
   if (error) throw error;
 }
 
+/* ── BILL ANALYSES ── */
+async function saveBillAnalysis(data) {
+  const user = await authGetUser();
+  if (!user) throw new Error('Não autenticado');
+  const { data: analysis, error } = await supabase.from('bill_analyses').insert({
+    user_id: user.id,
+    client_name: data.clientName,
+    state_uf: data.stateUF,
+    city: data.city,
+    monthly_kwh: data.monthlyKwh,
+    bill_value: data.billValue,
+    connection_type: data.connectionType,
+    panel_model: data.panelModel,
+    panels_recommended: data.panelsRecommended,
+    kwp_needed: data.kwpNeeded,
+    monthly_generation: data.monthlyGeneration,
+    monthly_savings: data.monthlySavings,
+    annual_savings: data.annualSavings,
+    investment: data.investment,
+    payback_years: data.paybackYears,
+    co2_avoided: data.co2Avoided
+  }).select().single();
+  if (error) throw error;
+  return analysis;
+}
+
+async function getBillAnalyses() {
+  const { data, error } = await supabase.from('bill_analyses')
+    .select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+async function deleteBillAnalysis(id) {
+  const { error } = await supabase.from('bill_analyses').delete().eq('id', id);
+  if (error) throw error;
+}
+
 /* ── DASHBOARD STATS ── */
 async function getDashboardStats() {
   const [sims, projects, budgets] = await Promise.all([
