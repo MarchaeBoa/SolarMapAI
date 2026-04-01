@@ -924,11 +924,11 @@ select option {
 
   <div class="photo-canvas-area" id="photoCanvas">
     <!-- Upload zone (shown when no image) -->
-    <div class="photo-upload-zone" id="uploadZone" onclick="document.getElementById('photoInput').click()">
+    <label class="photo-upload-zone" id="uploadZone" for="photoInput">
       <div class="icon">📷</div>
       <h3>Envie a foto do telhado</h3>
       <p>Arraste a imagem aqui ou clique para selecionar<br>JPG, PNG — qualquer resolução</p>
-    </div>
+    </label>
     <input type="file" id="photoInput" accept="image/*" style="display:none;" onchange="handlePhotoUpload(event)">
   </div>
 
