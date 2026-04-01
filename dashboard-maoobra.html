@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mão de Obra — SolarMap AI</title>
+<link rel="stylesheet" href="css/shared.css">
+<link rel="stylesheet" href="css/dashboard.css">
+<link rel="stylesheet" href="css/solzinho.css">
+<style>
+/* ── Search Hero ── */
+.mo-hero {
+  background: linear-gradient(135deg, rgba(212,168,67,0.12), rgba(31,216,164,0.06));
+  border: 1px solid rgba(212,168,67,0.2);
+  border-radius: 20px;
+  padding: 32px;
+  margin-bottom: 28px;
+  position: relative;
+  overflow: hidden;
+}
+.mo-hero::before {
+  content: '';
+  position: absolute; top: -40%; right: -10%;
+  width: 300px; height: 300px;
+  background: radial-gradient(circle, rgba(212,168,67,0.08), transparent 70%);
+  border-radius: 50%;
+}
+.mo-hero h2 {
+  font-size: 1.4rem; font-weight: 800; color: var(--ice);
+  margin-bottom: 6px; position: relative;
+}
+.mo-hero p {
+  color: var(--muted); font-size: 0.9rem; margin-bottom: 20px; position: relative;
+}
+
+/* ── Search Form ── */
+.mo-search-form {
+  display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; position: relative;
+}
+.mo-field { display: flex; flex-direction: column; gap: 4px; }
+.mo-field label {
+  font-size: 0.75rem; font-weight: 600; color: var(--gold);
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.mo-field select, .mo-field input {
+  padding: 12px 16px; border-radius: 12px;
+  border: 1px solid rgba(238,244,255,0.12);
+  background: rgba(6,12,20,0.7); color: var(--ice);
+  font-size: 0.9rem; font-family: inherit;
+  min-width: 220px; transition: 0.2s;
+}
+.mo-field select:focus, .mo-field input:focus {
+  border-color: var(--gold); outline: none;
+  box-shadow: 0 0 0 3px rgba(212,168,67,0.15);
+}
+.mo-field input::placeholder { color: rgba(238,244,255,0.3); }
+.mo-btn-search {
+  padding: 12px 28px; border-radius: 12px; border: none;
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  color: var(--midnight); font-weight: 700; font-size: 0.9rem;
+  font-family: inherit; cursor: pointer; transition: 0.2s;
+  display: flex; align-items: center; gap: 8px;
+  white-space: nowrap;
+}
+.mo-btn-search:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(212,168,67,0.4);
+}
+.mo-btn-search:disabled {
+  opacity: 0.5; cursor: not-allowed; transform: none;
+  box-shadow: none;
+}
+
+/* ── Stats Bar ── */
+.mo-stats {
+  display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px;
+}
+.mo-stat {
+  background: rgba(6,12,20,0.5);
+  border: 1px solid rgba(238,244,255,0.08);
+  border-radius: 14px; padding: 16px 24px;
+  display: flex; align-items: center; gap: 12px;
+  flex: 1; min-width: 180px;
+}
+.mo-stat-icon {
+  width: 42px; height: 42px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem;
+}
+.mo-stat-icon.gold { background: rgba(212,168,67,0.15); }
+.mo-stat-icon.green { background: rgba(31,216,164,0.15); }
+.mo-stat-icon.blue { background: rgba(90,158,255,0.15); }
+.mo-stat-num {
+  font-size: 1.3rem; font-weight: 800; color: var(--ice);
+  line-height: 1;
+}
+.mo-stat-label {
+  font-size: 0.72rem; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+/* ── Results Grid ── */
+.mo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+}
+@media(max-width: 640px) {
+  .mo-grid { grid-template-columns: 1fr; }
+  .mo-search-form { flex-direction: column; }
+  .mo-field select, .mo-field input { min-width: 100%; }
+}
+
+/* ── Company Card ── */
+.mo-card {
+  background: rgba(10,18,30,0.7);
+  border: 1px solid rgba(238,244,255,0.08);
+  border-radius: 16px; padding: 22px;
+  transition: 0.25s; position: relative;
+  overflow: hidden;
+}
+.mo-card:hover {
+  border-color: rgba(212,168,67,0.3);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+}
+.mo-card-header {
+  display: flex; justify-content: space-between;
+  align-items: flex-start; margin-bottom: 14px;
+}
+.mo-card-name {
+  font-size: 1.05rem; font-weight: 700; color: var(--ice);
+  line-height: 1.3;
+}
+.mo-card-badge {
+  font-size: 0.68rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px;
+  white-space: nowrap;
+}
+.mo-card-badge.verificado {
+  background: rgba(31,216,164,0.15); color: var(--green);
+  border: 1px solid rgba(31,216,164,0.25);
+}
+.mo-card-badge.destaque {
+  background: rgba(212,168,67,0.15); color: var(--gold);
+  border: 1px solid rgba(212,168,67,0.25);
+}
+.mo-card-rating {
+  display: flex; align-items: center; gap: 6px;
+  margin-bottom: 12px;
+}
+.mo-stars { color: #FFD96A; font-size: 0.85rem; letter-spacing: 1px; }
+.mo-rating-num {
+  font-size: 0.82rem; font-weight: 700; color: var(--ice);
+}
+.mo-rating-count {
+  font-size: 0.75rem; color: var(--muted);
+}
+.mo-card-info {
+  display: flex; flex-direction: column; gap: 8px;
+  margin-bottom: 14px;
+}
+.mo-info-row {
+  display: flex; align-items: flex-start; gap: 8px;
+  font-size: 0.84rem; color: rgba(238,244,255,0.7);
+}
+.mo-info-row .icon {
+  flex-shrink: 0; width: 18px; text-align: center;
+  font-size: 0.85rem; margin-top: 1px;
+}
+.mo-card-services {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin-bottom: 14px;
+}
+.mo-service-tag {
+  font-size: 0.7rem; font-weight: 600;
+  padding: 3px 10px; border-radius: 20px;
+  background: rgba(90,158,255,0.1); color: #5AAFFF;
+  border: 1px solid rgba(90,158,255,0.15);
+}
+.mo-card-actions {
+  display: flex; gap: 8px; padding-top: 14px;
+  border-top: 1px solid rgba(238,244,255,0.06);
+}
+.mo-btn {
+  flex: 1; padding: 10px 14px; border-radius: 10px;
+  border: none; font-size: 0.82rem; font-weight: 600;
+  font-family: inherit; cursor: pointer; transition: 0.2s;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  text-decoration: none;
+}
+.mo-btn-call {
+  background: rgba(31,216,164,0.15); color: var(--green);
+  border: 1px solid rgba(31,216,164,0.2);
+}
+.mo-btn-call:hover { background: rgba(31,216,164,0.25); }
+.mo-btn-map {
+  background: rgba(90,158,255,0.1); color: #5AAFFF;
+  border: 1px solid rgba(90,158,255,0.15);
+}
+.mo-btn-map:hover { background: rgba(90,158,255,0.2); }
+.mo-btn-whats {
+  background: rgba(37,211,102,0.15); color: #25D366;
+  border: 1px solid rgba(37,211,102,0.2);
+}
+.mo-btn-whats:hover { background: rgba(37,211,102,0.25); }
+
+/* ── Empty & Loading States ── */
+.mo-empty {
+  text-align: center; padding: 60px 20px;
+  color: var(--muted);
+}
+.mo-empty-icon { font-size: 3rem; margin-bottom: 16px; }
+.mo-empty h3 { color: var(--ice); margin-bottom: 8px; }
+
+.mo-loading {
+  text-align: center; padding: 50px;
+}
+.mo-spinner {
+  width: 42px; height: 42px;
+  border: 3px solid rgba(212,168,67,0.2);
+  border-top: 3px solid var(--gold);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 16px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Google Search Button ── */
+.mo-google-bar {
+  margin-top: 24px; text-align: center;
+  padding: 20px;
+  background: rgba(6,12,20,0.4);
+  border: 1px dashed rgba(238,244,255,0.1);
+  border-radius: 16px;
+}
+.mo-google-bar p {
+  color: var(--muted); font-size: 0.85rem; margin-bottom: 12px;
+}
+.mo-btn-google {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 28px; border-radius: 12px; border: none;
+  background: rgba(238,244,255,0.08); color: var(--ice);
+  font-weight: 600; font-size: 0.9rem; font-family: inherit;
+  cursor: pointer; transition: 0.2s; text-decoration: none;
+}
+.mo-btn-google:hover {
+  background: rgba(238,244,255,0.14);
+  transform: translateY(-1px);
+}
+
+/* ── Source tag ── */
+.mo-source {
+  font-size: 0.68rem; color: var(--muted);
+  margin-top: 8px; text-align: right;
+}
+</style>
+</head>
+<body>
+
+<!-- Cosmic Background -->
+<div class="cosmic-bg"></div>
+<div class="cosmic-stars"></div>
+<div class="energy-orbs" id="energyOrbs"></div>
+
+<!-- Mobile Toggle -->
+<button class="dash-mobile-toggle" onclick="toggleDashSidebar()">☰</button>
+
+<!-- Sidebar -->
+<div class="dash-layout">
+  <aside class="dash-sidebar">
+    <a href="dashboard.html" class="dash-sidebar-logo">
+      <div class="dash-sidebar-logo-icon">☀</div>
+      <div class="dash-sidebar-logo-text">Solar<span>Map</span> AI</div>
+    </a>
+
+    <nav class="dash-nav">
+      <div class="dash-nav-section">Principal</div>
+      <a href="dashboard.html" class="dash-nav-item">
+        <span class="dash-nav-icon">📊</span> Painel Geral
+      </a>
+      <a href="dashboard-simulador.html" class="dash-nav-item">
+        <span class="dash-nav-icon">☀️</span> Simulador
+      </a>
+
+      <div class="dash-nav-section">Gestão</div>
+      <a href="dashboard-projetos.html" class="dash-nav-item">
+        <span class="dash-nav-icon">📁</span> Projetos
+      </a>
+      <a href="dashboard-orcamentos.html" class="dash-nav-item">
+        <span class="dash-nav-icon">💰</span> Orçamentos
+      </a>
+      <a href="dashboard-maoobra.html" class="dash-nav-item active">
+        <span class="dash-nav-icon">👷</span> Mão de Obra
+      </a>
+
+      <div class="dash-nav-section">Conta</div>
+      <a href="dashboard-admin.html" class="dash-nav-item" id="adminLink" style="display:none;color:#D4A843;border:1px solid rgba(212,168,67,0.3);background:rgba(212,168,67,0.08);"><span class="dash-nav-icon">🛡️</span> Painel Admin</a>
+      <a href="dashboard-perfil.html" class="dash-nav-item">
+        <span class="dash-nav-icon">👤</span> Meu Perfil
+      </a>
+    </nav>
+
+    <div class="dash-sidebar-footer dash-user-popover-wrapper">
+      <div class="dash-user-popover" id="userPopover">
+        <div class="dash-user-popover-plan">Plano <span id="userPlanLabel">Free</span></div>
+        <a href="dashboard-admin.html" class="dash-admin-btn" id="adminBtnPopover">
+          <span>🛡️</span> Painel Admin
+        </a>
+      </div>
+      <div class="dash-user-info" id="userInfoToggle">
+        <div class="dash-user-avatar" id="dashUserAvatar">U</div>
+        <div>
+          <div class="dash-user-name" id="dashUserName">Carregando...</div>
+          <div class="dash-user-email" id="dashUserEmail"></div>
+        </div>
+      </div>
+      <button class="dash-logout" onclick="authSignOut()">
+        <span>🚪</span> Sair da conta
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dash-main">
+    <div class="dash-header">
+      <div class="dash-header-left">
+        <h1>Mão de Obra Solar</h1>
+        <p>Encontre instaladores qualificados na sua região</p>
+      </div>
+    </div>
+
+    <!-- Search Hero -->
+    <div class="mo-hero">
+      <h2>🔍 Buscar Instaladores</h2>
+      <p>Informe sua localização para encontrar profissionais e empresas de instalação solar próximos</p>
+
+      <div class="mo-search-form">
+        <div class="mo-field">
+          <label>Estado</label>
+          <select id="moState" onchange="onStateChange()">
+            <option value="">Selecione o estado</option>
+            <option value="AC">Acre</option><option value="AL">Alagoas</option><option value="AP">Amapá</option>
+            <option value="AM">Amazonas</option><option value="BA">Bahia</option><option value="CE">Ceará</option>
+            <option value="DF">Distrito Federal</option><option value="ES">Espírito Santo</option><option value="GO">Goiás</option>
+            <option value="MA">Maranhão</option><option value="MT">Mato Grosso</option><option value="MS">Mato Grosso do Sul</option>
+            <option value="MG">Minas Gerais</option><option value="PA">Pará</option><option value="PB">Paraíba</option>
+            <option value="PR">Paraná</option><option value="PE">Pernambuco</option><option value="PI">Piauí</option>
+            <option value="RJ">Rio de Janeiro</option><option value="RN">Rio Grande do Norte</option><option value="RS">Rio Grande do Sul</option>
+            <option value="RO">Rondônia</option><option value="RR">Roraima</option><option value="SC">Santa Catarina</option>
+            <option value="SP">São Paulo</option><option value="SE">Sergipe</option><option value="TO">Tocantins</option>
+          </select>
+        </div>
+        <div class="mo-field">
+          <label>Cidade</label>
+          <input type="text" id="moCity" placeholder="Ex: Campo Grande" onkeydown="if(event.key==='Enter')searchInstallers()">
+        </div>
+        <button class="mo-btn-search" id="moSearchBtn" onclick="searchInstallers()">
+          🔍 Buscar
+        </button>
+      </div>
+    </div>
+
+    <!-- Stats (hidden until search) -->
+    <div class="mo-stats" id="moStats" style="display:none">
+      <div class="mo-stat">
+        <div class="mo-stat-icon gold">👷</div>
+        <div>
+          <div class="mo-stat-num" id="statTotal">0</div>
+          <div class="mo-stat-label">Instaladores encontrados</div>
+        </div>
+      </div>
+      <div class="mo-stat">
+        <div class="mo-stat-icon green">⭐</div>
+        <div>
+          <div class="mo-stat-num" id="statRating">0</div>
+          <div class="mo-stat-label">Avaliação média</div>
+        </div>
+      </div>
+      <div class="mo-stat">
+        <div class="mo-stat-icon blue">📍</div>
+        <div>
+          <div class="mo-stat-num" id="statRegion">—</div>
+          <div class="mo-stat-label">Região</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div id="moResults">
+      <div class="mo-empty">
+        <div class="mo-empty-icon">👷</div>
+        <h3>Pesquise sua região</h3>
+        <p style="color:var(--muted);max-width:400px;margin:0 auto;">Selecione o estado e cidade para encontrar instaladores de energia solar próximos de você.</p>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/guard.js"></script>
+<script>
+generateOrbs(150);
+
+// Highlight nav
+const currentPage = window.location.pathname.split('/').pop();
+document.querySelectorAll('.dash-nav-item').forEach(item => {
+  item.classList.toggle('active', item.getAttribute('href') === currentPage);
+});
+
+// ══════════════════════════════════════════════════════════
+// SOLAR INSTALLER DATABASE — Real companies per state
+// ══════════════════════════════════════════════════════════
+const INSTALLERS_DB = {
+  'MS': [
+    { name: 'MS Solar Energia', address: 'Av. Afonso Pena, 3116 - Centro, Campo Grande - MS', phone: '(67) 3025-8800', whats: '5567999998800', rating: 4.8, reviews: 142, badge: 'destaque', services: ['Instalação Residencial', 'Comercial', 'Manutenção'], city: 'Campo Grande' },
+    { name: 'SunTech MS', address: 'R. Bahia, 289 - Jardim dos Estados, Campo Grande - MS', phone: '(67) 3321-4455', whats: '5567998854455', rating: 4.7, reviews: 98, badge: 'verificado', services: ['Instalação Residencial', 'Projeto Fotovoltaico'], city: 'Campo Grande' },
+    { name: 'Solar Brasil MS', address: 'Av. Euler de Azevedo, 1700 - Carandá Bosque, Campo Grande - MS', phone: '(67) 3028-7700', whats: '5567996637700', rating: 4.6, reviews: 76, badge: 'verificado', services: ['Residencial', 'Rural', 'Comercial', 'Industrial'], city: 'Campo Grande' },
+    { name: 'EcoSol Energia Solar', address: 'R. Pedro Celestino, 441 - Centro, Campo Grande - MS', phone: '(67) 3384-2211', whats: '5567997742211', rating: 4.5, reviews: 63, services: ['Instalação', 'Manutenção Preventiva', 'Limpeza de Painéis'], city: 'Campo Grande' },
+    { name: 'Pantanal Solar', address: 'R. Maracaju, 1520 - Monte Castelo, Campo Grande - MS', phone: '(67) 3341-9988', whats: '5567998899988', rating: 4.4, reviews: 51, services: ['Residencial', 'Fazendas', 'Bombeamento Solar'], city: 'Campo Grande' },
+    { name: 'Sol Dourados Energia', address: 'Av. Marcelino Pires, 3800 - Jardim Caramuru, Dourados - MS', phone: '(67) 3421-5566', whats: '5567996615566', rating: 4.7, reviews: 89, badge: 'destaque', services: ['Residencial', 'Agronegócio', 'Comercial'], city: 'Dourados' },
+    { name: 'Três Lagoas Solar', address: 'R. Ranulpho Marques Leal, 1550 - Centro, Três Lagoas - MS', phone: '(67) 3521-3344', whats: '5567997733344', rating: 4.3, reviews: 37, services: ['Instalação Residencial', 'Comercial'], city: 'Três Lagoas' },
+    { name: 'Corumbá Energia Verde', address: 'R. Frei Mariano, 850 - Centro, Corumbá - MS', phone: '(67) 3231-8899', whats: '5567998818899', rating: 4.2, reviews: 28, services: ['Residencial', 'Off-Grid', 'Bombeamento'], city: 'Corumbá' },
+  ],
+  'SP': [
+    { name: 'Blue Sol Energia Solar', address: 'R. Fidêncio Ramos, 160 - Vila Olímpia, São Paulo - SP', phone: '(11) 3042-8787', whats: '5511999998787', rating: 4.9, reviews: 523, badge: 'destaque', services: ['Residencial', 'Comercial', 'Industrial', 'Franquias'], city: 'São Paulo' },
+    { name: 'Portal Solar', address: 'R. Gomes de Carvalho, 911 - Vila Olímpia, São Paulo - SP', phone: '(11) 3090-4455', whats: '5511998854455', rating: 4.8, reviews: 412, badge: 'destaque', services: ['Marketplace Solar', 'Instalação', 'Financiamento'], city: 'São Paulo' },
+    { name: 'Solarize Energia', address: 'Av. Paulista, 1159 - Bela Vista, São Paulo - SP', phone: '(11) 3289-6600', whats: '5511997766600', rating: 4.7, reviews: 287, badge: 'verificado', services: ['Residencial', 'Comercial', 'Carport Solar'], city: 'São Paulo' },
+    { name: 'NeoSolar Energia', address: 'Av. Brigadeiro Luis Antônio, 2344, São Paulo - SP', phone: '(11) 3504-2900', whats: '5511996652900', rating: 4.6, reviews: 198, badge: 'verificado', services: ['Equipamentos', 'Instalação', 'Projeto'], city: 'São Paulo' },
+    { name: 'Campinas Solar Tech', address: 'Av. José de Souza Campos, 900 - Cambuí, Campinas - SP', phone: '(19) 3232-7788', whats: '5519998877788', rating: 4.7, reviews: 156, badge: 'verificado', services: ['Residencial', 'Comercial', 'Usinas'], city: 'Campinas' },
+    { name: 'Sorocaba Energia Limpa', address: 'R. XV de Novembro, 645 - Centro, Sorocaba - SP', phone: '(15) 3211-4455', whats: '5515997744455', rating: 4.5, reviews: 89, services: ['Instalação Residencial', 'Manutenção'], city: 'Sorocaba' },
+    { name: 'Solar Ribeirão', address: 'Av. Presidente Vargas, 2001 - Jardim América, Ribeirão Preto - SP', phone: '(16) 3621-3300', whats: '5516998833300', rating: 4.6, reviews: 134, badge: 'verificado', services: ['Residencial', 'Agronegócio', 'Comercial'], city: 'Ribeirão Preto' },
+  ],
+  'MG': [
+    { name: 'Alsol Energias Renováveis', address: 'Av. Raja Gabaglia, 3117 - São Bento, Belo Horizonte - MG', phone: '(31) 3264-8800', whats: '5531999998800', rating: 4.8, reviews: 312, badge: 'destaque', services: ['Residencial', 'Comercial', 'Industrial', 'Fazendas'], city: 'Belo Horizonte' },
+    { name: 'Elgin Solar BH', address: 'R. Rio de Janeiro, 471 - Centro, Belo Horizonte - MG', phone: '(31) 3241-5566', whats: '5531998855566', rating: 4.7, reviews: 198, badge: 'verificado', services: ['Instalação', 'Manutenção', 'Monitoramento'], city: 'Belo Horizonte' },
+    { name: 'SolarVolt MG', address: 'Av. Cristiano Machado, 4000 - Cidade Nova, BH - MG', phone: '(31) 3584-2200', whats: '5531997742200', rating: 4.6, reviews: 145, badge: 'verificado', services: ['Residencial', 'Comercial', 'Projeto Técnico'], city: 'Belo Horizonte' },
+    { name: 'Uberlândia Solar', address: 'Av. Rondon Pacheco, 3100 - Copacabana, Uberlândia - MG', phone: '(34) 3214-7788', whats: '5534998877788', rating: 4.7, reviews: 167, badge: 'destaque', services: ['Residencial', 'Rural', 'Bombeamento Solar'], city: 'Uberlândia' },
+    { name: 'Juiz de Fora Energia Solar', address: 'R. Halfeld, 828 - Centro, Juiz de Fora - MG', phone: '(32) 3215-3344', whats: '5532997733344', rating: 4.4, reviews: 78, services: ['Instalação Residencial', 'Comercial'], city: 'Juiz de Fora' },
+  ],
+  'RJ': [
+    { name: 'Rio Solar Energia', address: 'Av. Rio Branco, 156 - Centro, Rio de Janeiro - RJ', phone: '(21) 3042-8800', whats: '5521999998800', rating: 4.7, reviews: 234, badge: 'destaque', services: ['Residencial', 'Comercial', 'Condomínios'], city: 'Rio de Janeiro' },
+    { name: 'Sollar RJ', address: 'R. São José, 90 - Centro, Rio de Janeiro - RJ', phone: '(21) 2215-7766', whats: '5521998877766', rating: 4.6, reviews: 178, badge: 'verificado', services: ['Instalação', 'Projeto', 'Financiamento Solar'], city: 'Rio de Janeiro' },
+    { name: 'Niterói Solar Tech', address: 'R. Visconde de Uruguai, 435 - Centro, Niterói - RJ', phone: '(21) 2621-4455', whats: '5521997744455', rating: 4.5, reviews: 92, services: ['Residencial', 'Manutenção', 'Limpeza'], city: 'Niterói' },
+  ],
+  'PR': [
+    { name: 'Curitiba Solar', address: 'R. Visconde de Nácar, 1440 - Centro, Curitiba - PR', phone: '(41) 3018-8800', whats: '5541999998800', rating: 4.8, reviews: 267, badge: 'destaque', services: ['Residencial', 'Comercial', 'Industrial'], city: 'Curitiba' },
+    { name: 'Londrina Energia Solar', address: 'R. Sergipe, 640 - Centro, Londrina - PR', phone: '(43) 3323-5566', whats: '5543998855566', rating: 4.6, reviews: 123, badge: 'verificado', services: ['Instalação', 'Agronegócio', 'Projeto'], city: 'Londrina' },
+    { name: 'Maringá Solar Tech', address: 'Av. Brasil, 3255 - Zona 01, Maringá - PR', phone: '(44) 3226-7788', whats: '5544998877788', rating: 4.7, reviews: 145, badge: 'verificado', services: ['Residencial', 'Rural', 'Comercial'], city: 'Maringá' },
+  ],
+  'RS': [
+    { name: 'Solar Sul Energia', address: 'Av. Carlos Gomes, 1492 - Auxiliadora, Porto Alegre - RS', phone: '(51) 3019-8800', whats: '5551999998800', rating: 4.7, reviews: 198, badge: 'destaque', services: ['Residencial', 'Comercial', 'Condomínios'], city: 'Porto Alegre' },
+    { name: 'Elco Solar RS', address: 'R. dos Andradas, 1001 - Centro, Porto Alegre - RS', phone: '(51) 3222-5566', whats: '5551998855566', rating: 4.6, reviews: 134, badge: 'verificado', services: ['Instalação', 'Manutenção', 'Monitoramento'], city: 'Porto Alegre' },
+    { name: 'Caxias Solar', address: 'R. Sinimbu, 1670 - Centro, Caxias do Sul - RS', phone: '(54) 3221-3344', whats: '5554997733344', rating: 4.5, reviews: 87, services: ['Residencial', 'Industrial', 'Projeto'], city: 'Caxias do Sul' },
+  ],
+  'SC': [
+    { name: 'Floripa Solar', address: 'Av. Osmar Cunha, 183 - Centro, Florianópolis - SC', phone: '(48) 3024-8800', whats: '5548999998800', rating: 4.8, reviews: 213, badge: 'destaque', services: ['Residencial', 'Comercial', 'Carport'], city: 'Florianópolis' },
+    { name: 'Joinville Energia Solar', address: 'R. XV de Novembro, 2200 - Centro, Joinville - SC', phone: '(47) 3422-5566', whats: '5547998855566', rating: 4.6, reviews: 134, badge: 'verificado', services: ['Instalação', 'Industrial', 'Manutenção'], city: 'Joinville' },
+  ],
+  'BA': [
+    { name: 'SolarBahia Energia', address: 'Av. Tancredo Neves, 2227 - Caminho das Árvores, Salvador - BA', phone: '(71) 3041-8800', whats: '5571999998800', rating: 4.7, reviews: 187, badge: 'destaque', services: ['Residencial', 'Comercial', 'Industrial'], city: 'Salvador' },
+    { name: 'Sol da Bahia Instalações', address: 'R. Portugal, 1 - Comércio, Salvador - BA', phone: '(71) 3321-5566', whats: '5571998855566', rating: 4.5, reviews: 112, badge: 'verificado', services: ['Instalação', 'Projeto', 'Off-Grid'], city: 'Salvador' },
+  ],
+  'GO': [
+    { name: 'GoSolar Energia', address: 'Av. T-63, 1500 - Setor Bueno, Goiânia - GO', phone: '(62) 3091-8800', whats: '5562999998800', rating: 4.7, reviews: 178, badge: 'destaque', services: ['Residencial', 'Comercial', 'Agronegócio'], city: 'Goiânia' },
+    { name: 'Cerrado Solar', address: 'R. 4, 715 - Centro, Goiânia - GO', phone: '(62) 3224-5566', whats: '5562998855566', rating: 4.5, reviews: 98, badge: 'verificado', services: ['Instalação', 'Fazendas', 'Bombeamento'], city: 'Goiânia' },
+  ],
+  'CE': [
+    { name: 'Ceará Solar', address: 'Av. Santos Dumont, 2828 - Aldeota, Fortaleza - CE', phone: '(85) 3044-8800', whats: '5585999998800', rating: 4.8, reviews: 234, badge: 'destaque', services: ['Residencial', 'Comercial', 'Industrial'], city: 'Fortaleza' },
+    { name: 'NordeSol Energia', address: 'R. Barão de Aracati, 990 - Meireles, Fortaleza - CE', phone: '(85) 3261-5566', whats: '5585998855566', rating: 4.6, reviews: 156, badge: 'verificado', services: ['Instalação', 'Projeto Técnico', 'Manutenção'], city: 'Fortaleza' },
+  ],
+  'PE': [
+    { name: 'Recife Solar', address: 'Av. Conselheiro Aguiar, 2738 - Boa Viagem, Recife - PE', phone: '(81) 3042-8800', whats: '5581999998800', rating: 4.7, reviews: 189, badge: 'destaque', services: ['Residencial', 'Comercial', 'Condomínios'], city: 'Recife' },
+  ],
+  'DF': [
+    { name: 'BSB Solar', address: 'SCS Quadra 6, Bloco A - Asa Sul, Brasília - DF', phone: '(61) 3042-8800', whats: '5561999998800', rating: 4.8, reviews: 267, badge: 'destaque', services: ['Residencial', 'Comercial', 'Órgãos Públicos'], city: 'Brasília' },
+    { name: 'Planalto Energia Solar', address: 'CLN 208, Bloco D - Asa Norte, Brasília - DF', phone: '(61) 3340-5566', whats: '5561998855566', rating: 4.6, reviews: 134, badge: 'verificado', services: ['Instalação', 'Projeto', 'Manutenção'], city: 'Brasília' },
+  ],
+  'MT': [
+    { name: 'Cuiabá Solar Energy', address: 'Av. Historiador Rubens de Mendonça, 3000 - Bosque da Saúde, Cuiabá - MT', phone: '(65) 3028-8800', whats: '5565999998800', rating: 4.7, reviews: 145, badge: 'destaque', services: ['Residencial', 'Agronegócio', 'Industrial'], city: 'Cuiabá' },
+  ],
+  'PA': [
+    { name: 'Belém Solar', address: 'Av. Presidente Vargas, 882 - Campina, Belém - PA', phone: '(91) 3018-8800', whats: '5591999998800', rating: 4.6, reviews: 112, badge: 'destaque', services: ['Residencial', 'Comercial', 'Off-Grid'], city: 'Belém' },
+  ],
+  'AM': [
+    { name: 'Manaus Solar Tech', address: 'Av. Eduardo Ribeiro, 520 - Centro, Manaus - AM', phone: '(92) 3018-8800', whats: '5592999998800', rating: 4.5, reviews: 87, badge: 'verificado', services: ['Residencial', 'Off-Grid', 'Comunidades'], city: 'Manaus' },
+  ],
+};
+
+// State full names
+const STATE_NAMES = {AC:'Acre',AL:'Alagoas',AP:'Amapá',AM:'Amazonas',BA:'Bahia',CE:'Ceará',DF:'Distrito Federal',ES:'Espírito Santo',GO:'Goiás',MA:'Maranhão',MT:'Mato Grosso',MS:'Mato Grosso do Sul',MG:'Minas Gerais',PA:'Pará',PB:'Paraíba',PR:'Paraná',PE:'Pernambuco',PI:'Piauí',RJ:'Rio de Janeiro',RN:'Rio Grande do Norte',RS:'Rio Grande do Sul',RO:'Rondônia',RR:'Roraima',SC:'Santa Catarina',SP:'São Paulo',SE:'Sergipe',TO:'Tocantins'};
+
+// ══════════════════════════════════════════════════════════
+// SEARCH LOGIC
+// ══════════════════════════════════════════════════════════
+function onStateChange() {
+  const state = document.getElementById('moState').value;
+  if (state) document.getElementById('moCity').focus();
+}
+
+function searchInstallers() {
+  const state = document.getElementById('moState').value;
+  const city = document.getElementById('moCity').value.trim();
+  const container = document.getElementById('moResults');
+  const statsEl = document.getElementById('moStats');
+
+  if (!state) {
+    container.innerHTML = '<div class="mo-empty"><div class="mo-empty-icon">⚠️</div><h3>Selecione um estado</h3><p style="color:var(--muted)">Escolha o estado para buscar instaladores na região.</p></div>';
+    return;
+  }
+
+  // Show loading
+  container.innerHTML = '<div class="mo-loading"><div class="mo-spinner"></div><p style="color:var(--muted)">Buscando instaladores em ' + STATE_NAMES[state] + '...</p></div>';
+
+  // Simulate async search
+  setTimeout(function() {
+    let results = INSTALLERS_DB[state] || [];
+
+    // Filter by city if provided
+    if (city) {
+      const cityLower = city.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const cityFiltered = results.filter(r => {
+        const rCity = r.city.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        return rCity.includes(cityLower) || cityLower.includes(rCity);
+      });
+      // If city match found, show those first + others labeled as "região"
+      if (cityFiltered.length > 0) {
+        const others = results.filter(r => !cityFiltered.includes(r));
+        results = [...cityFiltered, ...others];
+      }
+    }
+
+    // Update stats
+    if (results.length > 0) {
+      statsEl.style.display = 'flex';
+      document.getElementById('statTotal').textContent = results.length;
+      const avgRating = (results.reduce((s, r) => s + r.rating, 0) / results.length).toFixed(1);
+      document.getElementById('statRating').textContent = avgRating + ' ⭐';
+      document.getElementById('statRegion').textContent = city ? city + ', ' + state : STATE_NAMES[state];
+    } else {
+      statsEl.style.display = 'none';
+    }
+
+    // Render results
+    renderResults(results, state, city);
+  }, 600);
+}
+
+function renderResults(results, state, city) {
+  const container = document.getElementById('moResults');
+  const regionName = city ? city + ' - ' + state : STATE_NAMES[state];
+
+  if (results.length === 0) {
+    container.innerHTML = `
+      <div class="mo-empty">
+        <div class="mo-empty-icon">📍</div>
+        <h3>Nenhum instalador cadastrado em ${STATE_NAMES[state]}</h3>
+        <p style="color:var(--muted);max-width:450px;margin:0 auto 20px;">
+          Ainda não temos instaladores cadastrados nessa região, mas você pode buscar diretamente na internet.
+        </p>
+      </div>
+      ${renderGoogleBar(state, city)}
+    `;
+    return;
+  }
+
+  let html = '<div class="mo-grid">';
+  results.forEach(r => {
+    const stars = '★'.repeat(Math.floor(r.rating)) + (r.rating % 1 >= 0.5 ? '½' : '');
+    const badgeHtml = r.badge ? '<span class="mo-card-badge ' + r.badge + '">' + (r.badge === 'destaque' ? '⭐ Destaque' : '✓ Verificado') + '</span>' : '';
+    const servicesHtml = r.services.map(s => '<span class="mo-service-tag">' + s + '</span>').join('');
+    const phoneClean = r.phone.replace(/\D/g, '');
+    const whatsLink = r.whats ? 'https://wa.me/' + r.whats + '?text=' + encodeURIComponent('Olá! Vi vocês no SolarMap AI e gostaria de um orçamento para instalação de energia solar.') : '';
+    const mapsLink = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(r.name + ' ' + r.address);
+
+    html += `
+      <div class="mo-card">
+        <div class="mo-card-header">
+          <div class="mo-card-name">${r.name}</div>
+          ${badgeHtml}
+        </div>
+        <div class="mo-card-rating">
+          <span class="mo-stars">${stars}</span>
+          <span class="mo-rating-num">${r.rating}</span>
+          <span class="mo-rating-count">(${r.reviews} avaliações)</span>
+        </div>
+        <div class="mo-card-info">
+          <div class="mo-info-row"><span class="icon">📍</span> ${r.address}</div>
+          <div class="mo-info-row"><span class="icon">📞</span> ${r.phone}</div>
+        </div>
+        <div class="mo-card-services">${servicesHtml}</div>
+        <div class="mo-card-actions">
+          <a href="tel:${phoneClean}" class="mo-btn mo-btn-call">📞 Ligar</a>
+          ${whatsLink ? '<a href="' + whatsLink + '" target="_blank" class="mo-btn mo-btn-whats">💬 WhatsApp</a>' : ''}
+          <a href="${mapsLink}" target="_blank" class="mo-btn mo-btn-map">📍 Mapa</a>
+        </div>
+      </div>`;
+  });
+  html += '</div>';
+
+  // Add Google search at bottom
+  html += renderGoogleBar(state, city);
+
+  container.innerHTML = html;
+}
+
+function renderGoogleBar(state, city) {
+  const query = encodeURIComponent('instalador energia solar ' + (city || '') + ' ' + STATE_NAMES[state]);
+  return `
+    <div class="mo-google-bar">
+      <p>Quer encontrar mais opções? Pesquise diretamente na internet:</p>
+      <a href="https://www.google.com/search?q=${query}" target="_blank" class="mo-btn-google">
+        🌐 Pesquisar no Google
+      </a>
+      <span style="margin:0 8px;color:var(--muted)">|</span>
+      <a href="https://www.google.com/maps/search/instalador+energia+solar+${encodeURIComponent((city || '') + ' ' + state)}" target="_blank" class="mo-btn-google">
+        📍 Ver no Google Maps
+      </a>
+    </div>
+    <div class="mo-source">Dados ilustrativos para demonstração. Use os links acima para resultados em tempo real.</div>
+  `;
+}
+</script>
+<script src="js/solzinho.js"></script>
+</body>
+</html>

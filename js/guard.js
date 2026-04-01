@@ -5,7 +5,7 @@
 (async function guardRoute() {
   const page = window.location.pathname.split('/').pop() || 'index.html';
   const authPages = ['login.html', 'register.html', 'forgot-password.html'];
-  const dashPages = ['dashboard.html', 'dashboard-simulador.html', 'dashboard-orcamentos.html', 'dashboard-projetos.html', 'dashboard-perfil.html', 'dashboard-admin.html'];
+  const dashPages = ['dashboard.html', 'dashboard-simulador.html', 'dashboard-orcamentos.html', 'dashboard-projetos.html', 'dashboard-perfil.html', 'dashboard-admin.html', 'dashboard-maoobra.html'];
   const freePages = ['planos.html'];
 
   const isAuthPage = authPages.includes(page);
