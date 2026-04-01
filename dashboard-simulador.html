@@ -620,6 +620,72 @@ select option {
 .draw-bottom-btn:hover { background: rgba(212,168,67,0.15); border-color: rgba(212,168,67,0.3); }
 .draw-zoom-label { font-size: 0.78rem; color: var(--gold); font-weight: 600; min-width: 40px; }
 
+/* Panel Placement Controls */
+.draw-panel-controls {
+  position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%); z-index: 110;
+  display: flex; gap: 10px; align-items: center;
+  background: rgba(6,12,20,0.92); backdrop-filter: blur(16px);
+  border: 1px solid rgba(31,216,164,0.25); border-radius: 14px;
+  padding: 10px 18px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+.dpc-btn {
+  padding: 8px 16px; border: 1px solid rgba(238,244,255,0.1);
+  border-radius: 10px; background: rgba(238,244,255,0.04);
+  color: var(--ice); font-size: 0.82rem; font-weight: 600;
+  font-family: inherit; cursor: pointer; transition: 0.2s;
+}
+.dpc-btn:hover { background: rgba(31,216,164,0.15); }
+.dpc-add.active { background: rgba(31,216,164,0.2); border-color: var(--green); color: var(--green); }
+.dpc-clear { color: #ff6b6b; border-color: rgba(255,107,107,0.2); }
+.dpc-clear:hover { background: rgba(255,107,107,0.15); }
+.dpc-size { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 0.78rem; }
+.dpc-size input { width: 80px; accent-color: var(--green); }
+.dpc-count { color: var(--ice); font-size: 0.82rem; }
+
+/* Draw mode solar panel (HTML overlay) */
+.draw-solar-panel {
+  position: absolute; cursor: grab; user-select: none;
+  pointer-events: auto; z-index: 15;
+  transition: box-shadow 0.2s;
+}
+.draw-solar-panel:hover { z-index: 20; }
+.draw-solar-panel .dp-face {
+  width: 100%; height: 100%; border-radius: 3px;
+  background: linear-gradient(145deg, #1a3a6c, #0e2545);
+  border: 1px solid rgba(31,216,164,0.6);
+  display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, 1fr); gap: 1px;
+  overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+}
+.draw-solar-panel .dp-cell {
+  background: linear-gradient(135deg, rgba(26,58,108,0.9), rgba(14,37,69,0.95));
+  border: 0.5px solid rgba(31,216,164,0.15);
+}
+.draw-solar-panel .dp-del {
+  position: absolute; top: -8px; right: -8px; width: 18px; height: 18px;
+  background: #ff4444; border: none; border-radius: 50%;
+  color: #fff; font-size: 10px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 0.2s; line-height: 1;
+}
+.draw-solar-panel:hover .dp-del { opacity: 1; }
+.draw-solar-panel .dp-rotate {
+  position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
+  width: 18px; height: 18px; border-radius: 50%;
+  background: linear-gradient(135deg, #FFD96A, #D4A843);
+  border: 2px solid #fff; cursor: grab;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; opacity: 0; transition: opacity 0.2s;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+.draw-solar-panel:hover .dp-rotate { opacity: 1; }
+.draw-solar-panel .dp-angle {
+  position: absolute; top: -34px; left: 50%; transform: translateX(-50%);
+  font-size: 9px; color: var(--gold); font-weight: 700;
+  background: rgba(6,12,20,0.8); padding: 1px 5px; border-radius: 4px;
+  opacity: 0; transition: opacity 0.2s; white-space: nowrap;
+}
+.draw-solar-panel:hover .dp-angle { opacity: 1; }
+
 /* Measure tooltip */
 .draw-measure-tip {
   position: absolute; z-index: 200;
@@ -655,6 +721,8 @@ select option {
     <button class="draw-tool-btn" data-tool="text" title="Texto (T)">🔤</button>
     <button class="draw-tool-btn" data-tool="eraser" title="Apagar (E)">🗑️</button>
     <div class="draw-toolbar-divider"></div>
+    <button class="draw-tool-btn" data-tool="panel" title="Colocar Painéis (S)" style="background:rgba(31,216,164,0.12);border-color:rgba(31,216,164,0.3);">☀️</button>
+    <div class="draw-toolbar-divider"></div>
     <button class="draw-tool-btn" onclick="drawUndo()" title="Desfazer (Ctrl+Z)">↩️</button>
     <button class="draw-tool-btn" onclick="drawRedo()" title="Refazer (Ctrl+Y)">↪️</button>
     <div class="draw-toolbar-divider"></div>
@@ -666,6 +734,19 @@ select option {
     <canvas id="drawCanvas"></canvas>
     <!-- Measure tooltip -->
     <div class="draw-measure-tip" id="drawMeasureTip" style="display:none;"></div>
+    <!-- Panels overlay (HTML divs on top of canvas, like photo mode) -->
+    <div id="drawPanelsOverlay" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:10;"></div>
+  </div>
+
+  <!-- Panel Placement Controls (like photo mode) -->
+  <div class="draw-panel-controls" id="drawPanelControls" style="display:none;">
+    <button class="dpc-btn dpc-add active" onclick="drawEnablePanelMode()">☀️ Adicionar Painel</button>
+    <div class="dpc-size">
+      <span>Tamanho:</span>
+      <input type="range" id="drawPanelSizeSlider" min="30" max="120" value="60" oninput="drawPanelSize=parseInt(this.value)">
+    </div>
+    <span class="dpc-count">Painéis: <strong id="drawPanelCount">0</strong></span>
+    <button class="dpc-btn dpc-clear" onclick="drawClearPanels()">Limpar painéis</button>
   </div>
 
   <!-- Right Panel -->
@@ -1698,8 +1779,19 @@ function drawInit() {
       btn.classList.add('active');
       drawCanvas.style.cursor = drawCurrentTool === 'select' ? 'default' :
         drawCurrentTool === 'eraser' ? 'not-allowed' :
-        drawCurrentTool === 'text' ? 'text' : 'crosshair';
+        drawCurrentTool === 'text' ? 'text' :
+        drawCurrentTool === 'panel' ? 'crosshair' : 'crosshair';
       drawTempPoints = [];
+
+      // Toggle panel placement mode
+      if (drawCurrentTool === 'panel') {
+        drawPanelMode = true;
+        drawTogglePanelControls(true);
+        document.getElementById('drawCanvasArea').style.cursor = 'crosshair';
+      } else {
+        drawPanelMode = false;
+        drawTogglePanelControls(false);
+      }
     });
   });
 
@@ -1723,6 +1815,7 @@ function drawInit() {
     if (e.key === 'm' || e.key === 'M') drawSelectTool('measure');
     if (e.key === 't' || e.key === 'T') drawSelectTool('text');
     if (e.key === 'e' || e.key === 'E') drawSelectTool('eraser');
+    if (e.key === 's' || e.key === 'S') drawSelectTool('panel');
     if (e.key === 'Delete' && drawSelectedShape !== null) {
       drawShapes.splice(drawSelectedShape, 1);
       drawSelectedShape = null;
@@ -2195,6 +2288,141 @@ function drawUpdateInfo() {
 
   document.getElementById('drawTotalArea').textContent = totalArea.toFixed(1) + ' m²';
   document.getElementById('drawTotalPerimeter').textContent = totalPerimeter.toFixed(1) + ' m';
+}
+
+// ── PANEL PLACEMENT ON DRAW MODE ──
+let drawPanelMode = false;
+let drawPanelSize = 60;
+let drawPlacedPanels = [];
+
+function drawEnablePanelMode() {
+  drawPanelMode = !drawPanelMode;
+  const btn = document.querySelector('.dpc-add');
+  btn.classList.toggle('active', drawPanelMode);
+  document.getElementById('drawCanvasArea').style.cursor = drawPanelMode ? 'crosshair' : 'default';
+}
+
+function drawTogglePanelControls(show) {
+  document.getElementById('drawPanelControls').style.display = show ? 'flex' : 'none';
+}
+
+// Listen for clicks on canvas area to place panels
+document.addEventListener('click', function(e) {
+  if (!drawPanelMode) return;
+  const area = document.getElementById('drawCanvasArea');
+  if (!area || !area.contains(e.target)) return;
+  if (e.target.closest('.draw-solar-panel') || e.target.closest('.dp-del') || e.target.closest('.dp-rotate')) return;
+
+  const rect = area.getBoundingClientRect();
+  const x = e.clientX - rect.left - drawPanelSize / 2;
+  const y = e.clientY - rect.top - (drawPanelSize * 0.65) / 2;
+
+  drawCreatePanel(x, y);
+});
+
+function drawCreatePanel(x, y) {
+  const overlay = document.getElementById('drawPanelsOverlay');
+  const w = drawPanelSize;
+  const h = w * 0.65;
+
+  const panel = document.createElement('div');
+  panel.className = 'draw-solar-panel';
+  panel.style.cssText = `left:${x}px;top:${y}px;width:${w}px;height:${h}px;transform:rotate(0deg);`;
+  panel.dataset.rotation = '0';
+
+  panel.innerHTML = `
+    <div class="dp-face">
+      <div class="dp-cell"></div><div class="dp-cell"></div>
+      <div class="dp-cell"></div><div class="dp-cell"></div>
+      <div class="dp-cell"></div><div class="dp-cell"></div>
+    </div>
+    <button class="dp-del" onclick="drawRemovePanel(this)">✕</button>
+    <div class="dp-rotate">↻</div>
+    <div class="dp-angle">0°</div>
+  `;
+
+  // Drag to move
+  let isDrag = false, startX, startY, origX, origY;
+  panel.addEventListener('mousedown', function(e) {
+    if (e.target.closest('.dp-del') || e.target.closest('.dp-rotate')) return;
+    isDrag = true;
+    startX = e.clientX; startY = e.clientY;
+    origX = parseInt(panel.style.left); origY = parseInt(panel.style.top);
+    panel.style.cursor = 'grabbing'; panel.style.zIndex = 50;
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', function(e) {
+    if (!isDrag) return;
+    panel.style.left = (origX + e.clientX - startX) + 'px';
+    panel.style.top = (origY + e.clientY - startY) + 'px';
+  });
+  document.addEventListener('mouseup', function() {
+    if (isDrag) { isDrag = false; panel.style.cursor = 'grab'; panel.style.zIndex = 15; }
+  });
+
+  // Rotate handle
+  const rotHandle = panel.querySelector('.dp-rotate');
+  const rotLabel = panel.querySelector('.dp-angle');
+  let isRot = false;
+  rotHandle.addEventListener('mousedown', function(e) {
+    isRot = true; e.preventDefault(); e.stopPropagation();
+    panel.style.zIndex = 50;
+  });
+  document.addEventListener('mousemove', function(e) {
+    if (!isRot) return;
+    const r = panel.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
+    let angle = Math.atan2(e.clientY - cy, e.clientX - cx) * (180 / Math.PI) + 90;
+    if (angle < 0) angle += 360;
+    angle = Math.round(angle);
+    panel.style.transform = 'rotate(' + angle + 'deg)';
+    panel.dataset.rotation = angle;
+    rotLabel.textContent = angle + '°';
+  });
+  document.addEventListener('mouseup', function() {
+    if (isRot) { isRot = false; panel.style.zIndex = 15; }
+  });
+
+  // Touch support
+  panel.addEventListener('touchstart', function(e) {
+    if (e.target.closest('.dp-del') || e.target.closest('.dp-rotate')) return;
+    isDrag = true;
+    const t = e.touches[0];
+    startX = t.clientX; startY = t.clientY;
+    origX = parseInt(panel.style.left); origY = parseInt(panel.style.top);
+    panel.style.zIndex = 50;
+  }, { passive: true });
+  document.addEventListener('touchmove', function(e) {
+    if (!isDrag) return;
+    const t = e.touches[0];
+    panel.style.left = (origX + t.clientX - startX) + 'px';
+    panel.style.top = (origY + t.clientY - startY) + 'px';
+  });
+  document.addEventListener('touchend', function() {
+    if (isDrag) { isDrag = false; panel.style.zIndex = 15; }
+  });
+
+  overlay.appendChild(panel);
+  drawPlacedPanels.push(panel);
+  drawUpdatePanelCount();
+}
+
+function drawRemovePanel(btn) {
+  const panel = btn.closest('.draw-solar-panel');
+  drawPlacedPanels = drawPlacedPanels.filter(p => p !== panel);
+  panel.remove();
+  drawUpdatePanelCount();
+}
+
+function drawClearPanels() {
+  drawPlacedPanels.forEach(p => p.remove());
+  drawPlacedPanels = [];
+  drawUpdatePanelCount();
+}
+
+function drawUpdatePanelCount() {
+  document.getElementById('drawPanelCount').textContent = drawPlacedPanels.length;
 }
 
 // ── SIMULATE PANELS ──
