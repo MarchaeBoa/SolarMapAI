@@ -746,9 +746,91 @@ select option {
         <button class="pp-mini-btn pp-undo" onclick="drawUndoLastPanel()" title="Desfazer último">↩</button>
         <button class="pp-mini-btn pp-clear" onclick="drawClearPanels()" title="Limpar todos">🗑️</button>
       </div>
-      <button onclick="drawSimulate()" style="width:100%;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--gold-light),var(--gold));color:var(--midnight);font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.9rem;transition:var(--transition);box-shadow:0 4px 16px rgba(212,168,67,0.3);" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform=''">
+      <div style="margin-bottom:8px;">
+        <label style="font-size:0.7rem;color:var(--muted);display:block;margin-bottom:3px;">Estado</label>
+        <select id="dpStateUF" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(238,244,255,0.1);background:rgba(6,12,20,0.6);color:var(--ice);font-size:0.8rem;font-family:inherit;">
+          <option value="MS">Mato Grosso do Sul</option><option value="SP">São Paulo</option><option value="RJ">Rio de Janeiro</option>
+          <option value="MG">Minas Gerais</option><option value="PR">Paraná</option><option value="RS">Rio Grande do Sul</option>
+          <option value="BA">Bahia</option><option value="GO">Goiás</option><option value="CE">Ceará</option>
+          <option value="SC">Santa Catarina</option><option value="PE">Pernambuco</option><option value="DF">Distrito Federal</option>
+          <option value="PA">Pará</option><option value="MT">Mato Grosso</option><option value="ES">Espírito Santo</option>
+          <option value="MA">Maranhão</option><option value="PI">Piauí</option><option value="RN">Rio Grande do Norte</option>
+          <option value="PB">Paraíba</option><option value="AL">Alagoas</option><option value="SE">Sergipe</option>
+          <option value="TO">Tocantins</option><option value="RO">Rondônia</option><option value="AC">Acre</option>
+          <option value="AM">Amazonas</option><option value="AP">Amapá</option><option value="RR">Roraima</option>
+        </select>
+      </div>
+      <div style="margin-bottom:8px;">
+        <label style="font-size:0.7rem;color:var(--muted);display:block;margin-bottom:3px;">Painel</label>
+        <select id="dpPanelType" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(238,244,255,0.1);background:rgba(6,12,20,0.6);color:var(--ice);font-size:0.8rem;font-family:inherit;">
+          <option value="mono-400">Mono 400W</option><option value="bi-450">Bifacial 450W</option>
+          <option value="poly-350">Poli 350W</option><option value="mono-550">Premium 550W</option>
+          <option value="mono-600">Ultra 600W</option><option value="compact-400">Compacto 400W</option>
+        </select>
+      </div>
+      <button onclick="drawSimulateFull()" style="width:100%;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--gold-light),var(--gold));color:var(--midnight);font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.9rem;transition:var(--transition);box-shadow:0 4px 16px rgba(212,168,67,0.3);" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform=''">
         ✅ Simular orçamento
       </button>
+    </div>
+
+    <!-- Simulation Results (same as map mode) -->
+    <div class="pp-info" id="dpResults" style="display:none;">
+      <h4 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:0.9rem;font-weight:700;color:var(--ice);margin-bottom:12px;">📊 Orçamento estimado</h4>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;">
+        <div style="background:rgba(238,244,255,0.04);border:1px solid rgba(238,244,255,0.06);border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:0.62rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:2px;">Painéis</div>
+          <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.1rem;font-weight:800;color:var(--green);" id="dpOrPanels">0</div>
+        </div>
+        <div style="background:rgba(238,244,255,0.04);border:1px solid rgba(238,244,255,0.06);border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:0.62rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:2px;">Potência</div>
+          <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.1rem;font-weight:800;color:var(--gold-light);" id="dpOrPower">0 kWp</div>
+        </div>
+        <div style="background:rgba(238,244,255,0.04);border:1px solid rgba(238,244,255,0.06);border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:0.62rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:2px;">Geração/mês</div>
+          <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.1rem;font-weight:800;color:var(--green);" id="dpOrGen">0 kWh</div>
+        </div>
+        <div style="background:rgba(238,244,255,0.04);border:1px solid rgba(238,244,255,0.06);border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:0.62rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:2px;">Economia/ano</div>
+          <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.1rem;font-weight:800;color:var(--gold-light);" id="dpOrSavings">R$ 0</div>
+        </div>
+      </div>
+
+      <!-- Fornecedor -->
+      <div style="background:rgba(31,216,164,0.06);border:1px solid rgba(31,216,164,0.2);border-radius:12px;padding:14px;margin-bottom:10px;">
+        <div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--green);margin-bottom:8px;font-weight:600;">🏪 Fornecedor mais barato da região</div>
+        <div style="font-size:1rem;font-weight:700;color:var(--ice);margin-bottom:4px;" id="dpOrFornecedor">—</div>
+        <div style="font-size:0.8rem;color:var(--muted);" id="dpOrFornecedorInfo">—</div>
+        <div style="font-size:1.2rem;font-weight:800;color:var(--green);margin-top:6px;" id="dpOrFornecedorPreco">—</div>
+      </div>
+
+      <!-- Mão de obra -->
+      <div style="background:rgba(212,168,67,0.06);border:1px solid rgba(212,168,67,0.2);border-radius:12px;padding:14px;margin-bottom:10px;">
+        <div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--gold);margin-bottom:8px;font-weight:600;">🔧 Mão de obra estimada</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span style="font-size:0.82rem;color:var(--muted);">Instalação</span>
+          <span style="font-size:0.92rem;font-weight:700;color:var(--ice);" id="dpOrMaoObra">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span style="font-size:0.82rem;color:var(--muted);">Estrutura de fixação</span>
+          <span style="font-size:0.92rem;font-weight:700;color:var(--ice);" id="dpOrEstrutura">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span style="font-size:0.82rem;color:var(--muted);">Parte elétrica</span>
+          <span style="font-size:0.92rem;font-weight:700;color:var(--ice);" id="dpOrEletrica">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid rgba(212,168,67,0.2);padding-top:8px;margin-top:8px;">
+          <span style="font-size:0.85rem;font-weight:600;color:var(--gold);">Total mão de obra</span>
+          <span style="font-size:1rem;font-weight:800;color:var(--gold-light);" id="dpOrMaoObraTotal">—</span>
+        </div>
+      </div>
+
+      <!-- Total -->
+      <div style="background:linear-gradient(135deg,rgba(212,168,67,0.12),rgba(31,216,164,0.08));border:1px solid rgba(212,168,67,0.3);border-radius:12px;padding:16px;text-align:center;">
+        <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--gold);margin-bottom:4px;">Investimento total estimado</div>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.6rem;font-weight:800;color:var(--ice);" id="dpOrTotal">—</div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-top:4px;" id="dpOrPayback">—</div>
+      </div>
     </div>
   </div>
 
@@ -2447,7 +2529,57 @@ function drawUpdatePanelCount() {
   document.getElementById('drawPanelCount').textContent = drawPlacedPanels.length;
 }
 
-// ── SIMULATE PANELS ──
+// ── FULL SIMULATION (draw mode — same as map mode) ──
+function drawSimulateFull() {
+  const count = drawPlacedPanels.length;
+  if (count === 0) { alert('Coloque pelo menos 1 painel no telhado!'); return; }
+
+  const panelType = document.getElementById('dpPanelType').value;
+  const p = PD[panelType];
+  const uf = document.getElementById('dpStateUF').value || 'MS';
+  const irr = IRR[uf] || 4.8;
+  const tar = TAR[uf] || 0.78;
+
+  const kWp = (count * p.w) / 1000;
+  const gen = kWp * irr * 30 * 0.78;
+  const sav = gen * 12 * tar;
+  const fmt = n => 'R$ ' + n.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+  // Fornecedor mais barato
+  const fornecedores = FORNECEDORES[uf] || [FORNECEDOR_DEFAULT];
+  const melhor = fornecedores.reduce((a, b) => a.preco_wp < b.preco_wp ? a : b);
+  const custoEquip = kWp * 1000 * melhor.preco_wp;
+
+  // Mão de obra
+  const instalacao = kWp * MAO_OBRA.instalacao_kwp;
+  const estrutura = kWp * MAO_OBRA.estrutura_kwp;
+  const eletrica = kWp * MAO_OBRA.eletrica_kwp;
+  const totalMaoObra = instalacao + estrutura + eletrica;
+  const totalGeral = custoEquip + totalMaoObra;
+  const payback = sav > 0 ? totalGeral / sav : 0;
+
+  // Fill results
+  document.getElementById('dpOrPanels').textContent = count;
+  document.getElementById('dpOrPower').textContent = kWp.toFixed(1) + ' kWp';
+  document.getElementById('dpOrGen').textContent = gen.toFixed(0) + ' kWh';
+  document.getElementById('dpOrSavings').textContent = fmt(sav);
+
+  document.getElementById('dpOrFornecedor').textContent = melhor.nome;
+  document.getElementById('dpOrFornecedorInfo').textContent = melhor.cidade + ' · ⭐ ' + melhor.nota + ' · R$ ' + melhor.preco_wp.toFixed(2) + '/Wp';
+  document.getElementById('dpOrFornecedorPreco').textContent = 'Equipamento: ' + fmt(custoEquip);
+
+  document.getElementById('dpOrMaoObra').textContent = fmt(instalacao);
+  document.getElementById('dpOrEstrutura').textContent = fmt(estrutura);
+  document.getElementById('dpOrEletrica').textContent = fmt(eletrica);
+  document.getElementById('dpOrMaoObraTotal').textContent = fmt(totalMaoObra);
+
+  document.getElementById('dpOrTotal').textContent = fmt(totalGeral);
+  document.getElementById('dpOrPayback').textContent = 'Payback estimado: ' + payback.toFixed(1) + ' anos';
+
+  document.getElementById('dpResults').style.display = 'block';
+}
+
+// ── AREA-BASED SIMULATE (from right panel) ──
 function drawSimulate() {
   const resDiv = document.getElementById('drawSimResults');
   let totalArea = 0;
