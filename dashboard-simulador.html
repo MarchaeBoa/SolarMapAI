@@ -12,6 +12,32 @@
 <style>
 .dash-main { padding: 0 !important; overflow: hidden; }
 
+/* Solar Panel SVG Animation */
+@keyframes panelFadeIn {
+  from { opacity: 0; transform: scale(0.7); }
+  to { opacity: 1; transform: scale(1); }
+}
+.solar-panel-svg { transition: filter 0.2s; }
+.solar-panel-svg:hover { filter: brightness(1.3) !important; }
+.solar-panel-rect { transition: fill-opacity 0.3s; }
+
+/* Panel stats overlay */
+.panel-stats-overlay {
+  position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%);
+  z-index: 1001; display: flex; gap: 10px; pointer-events: none;
+}
+.panel-stat-chip {
+  background: rgba(6,12,20,0.88); backdrop-filter: blur(16px);
+  border: 1px solid rgba(212,168,67,0.25); border-radius: 12px;
+  padding: 8px 16px; display: flex; align-items: center; gap: 8px;
+  font-family: 'Plus Jakarta Sans', sans-serif; pointer-events: auto;
+}
+.panel-stat-chip .chip-icon { font-size: 1.1rem; }
+.panel-stat-chip .chip-value { font-size: 0.95rem; font-weight: 800; color: var(--ice); }
+.panel-stat-chip .chip-label { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.panel-stat-chip.gold .chip-value { color: var(--gold); }
+.panel-stat-chip.green .chip-value { color: var(--green); }
+
 /* Fix select dropdown visibility */
 select option {
   background: #0A1628 !important;
@@ -628,9 +654,12 @@ select option {
       <div class="fp-field">
         <label>Painel</label>
         <select id="panelType">
-          <option value="mono-400">Monocristalino 400W</option>
-          <option value="bi-450">Bifacial 450W</option>
-          <option value="poly-350">Policristalino 350W</option>
+          <option value="mono-400">Monocristalino 400W (1.04×2.10m)</option>
+          <option value="bi-450">Bifacial 450W (1.04×2.10m)</option>
+          <option value="poly-350">Policristalino 350W (0.99×1.96m)</option>
+          <option value="mono-550">Premium 550W (1.13×2.28m)</option>
+          <option value="mono-600">Ultra 600W (1.20×2.30m)</option>
+          <option value="compact-400">Compacto 400W (1.00×1.72m)</option>
         </select>
       </div>
       <div class="fp-field">
@@ -772,6 +801,7 @@ select option {
 <script src="js/supabase-config.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/dashboard.js"></script>
+<script src="js/solarPanelLayoutEngine.js"></script>
 <script src="js/guard.js"></script>
 <script>
 // ══════════════════════════════════════
@@ -903,7 +933,10 @@ document.getElementById('addressInput').addEventListener('keypress', e => { if (
 const PD = {
   'mono-400': { w:400, pw:1.04, ph:2.1, price:850 },
   'bi-450': { w:450, pw:1.04, ph:2.1, price:1100 },
-  'poly-350': { w:350, pw:0.99, ph:1.96, price:650 }
+  'poly-350': { w:350, pw:0.99, ph:1.96, price:650 },
+  'mono-550': { w:550, pw:1.13, ph:2.28, price:1350 },
+  'mono-600': { w:600, pw:1.20, ph:2.30, price:1600 },
+  'compact-400': { w:400, pw:1.00, ph:1.72, price:780 }
 };
 const IRR = {SP:4.5,RJ:4.6,MG:5.0,BA:5.4,CE:5.5,PE:5.3,PR:4.4,RS:4.2,SC:4.3,GO:5.2,DF:5.1,PA:4.8,MT:5.1,MS:5.0,ES:4.7,MA:5.3,PI:5.6,RN:5.7,PB:5.5,AL:5.4,SE:5.3,TO:5.2};
 const TAR = {SP:0.78,RJ:0.82,MG:0.80,BA:0.76,CE:0.74,PE:0.77,PR:0.75,RS:0.79,SC:0.76,GO:0.73,DF:0.72,PA:0.80,MT:0.78,MS:0.76,ES:0.78,MA:0.72,PI:0.70,RN:0.74,PB:0.73,AL:0.76,SE:0.75,TO:0.74};
@@ -911,36 +944,69 @@ const TAR = {SP:0.78,RJ:0.82,MG:0.80,BA:0.76,CE:0.74,PE:0.77,PR:0.75,RS:0.79,SC:
 function placePanels() {
   if (!roofPolygon) return;
   clearPanels();
-  const p = PD[document.getElementById('panelType').value];
-  const bounds = roofPolygon.getBounds();
-  const ll = roofPolygon.getLatLngs()[0];
-  const cLat = bounds.getCenter().lat;
-  const dLat = (p.ph + 0.15) / 110540;
-  const dLng = (p.pw + 0.05) / (111320 * Math.cos(cLat * Math.PI / 180));
-  let count = 0;
 
-  for (let lat = bounds.getSouth() + dLat/2; lat < bounds.getNorth(); lat += dLat) {
-    for (let lng = bounds.getWest() + dLng/2; lng < bounds.getEast(); lng += dLng) {
-      if (pip([lat, lng], ll)) {
-        panelMarkers.push(L.rectangle(
-          [[lat - dLat*0.42, lng - dLng*0.42], [lat + dLat*0.42, lng + dLng*0.42]],
-          { color:'#1FD8A4', weight:0.8, fillColor:'#0A1E35', fillOpacity:0.75, interactive:false }
-        ).addTo(map));
-        count++;
+  const panelKey = document.getElementById('panelType').value;
+  const p = PD[panelKey];
+
+  // ── Use SolarLayoutEngine for realistic placement ──
+  let layout, stats;
+  if (typeof SolarLayoutEngine !== 'undefined') {
+    layout = SolarLayoutEngine.generateLayout(roofPolygon, panelKey);
+    const uf = document.getElementById('stateUF').value;
+    stats = SolarLayoutEngine.calculateStats(layout, uf, IRR, TAR);
+
+    // Render with engine (animated SVG panels)
+    const rendered = SolarLayoutEngine.renderOnMap(map, layout, { animate: true });
+    panelMarkers.push(...rendered);
+
+    // Show stats overlay on map
+    showPanelStatsOverlay(stats);
+
+    _updateResults(stats.count, stats.kWp, stats.monthlyGen, stats.annualSavings, stats.investment, stats.payback, stats.co2Avoided);
+  } else {
+    // ── Fallback: original logic if engine not loaded ──
+    const bounds = roofPolygon.getBounds();
+    const ll = roofPolygon.getLatLngs()[0];
+    const cLat = bounds.getCenter().lat;
+    const dLat = (p.ph + 0.15) / 110540;
+    const dLng = (p.pw + 0.05) / (111320 * Math.cos(cLat * Math.PI / 180));
+    let count = 0;
+    for (let lat = bounds.getSouth() + dLat/2; lat < bounds.getNorth(); lat += dLat) {
+      for (let lng = bounds.getWest() + dLng/2; lng < bounds.getEast(); lng += dLng) {
+        if (pip([lat, lng], ll)) {
+          panelMarkers.push(L.rectangle(
+            [[lat - dLat*0.42, lng - dLng*0.42], [lat + dLat*0.42, lng + dLng*0.42]],
+            { color:'#1FD8A4', weight:0.8, fillColor:'#0A1E35', fillOpacity:0.75, interactive:false }
+          ).addTo(map));
+          count++;
+        }
       }
     }
+    const uf = document.getElementById('stateUF').value;
+    const irr = IRR[uf]||4.8, tar = TAR[uf]||0.78;
+    const kWp = (count * p.w) / 1000;
+    const gen = kWp * irr * 30 * 0.78;
+    const sav = gen * 12 * tar;
+    const inv = count * p.price + kWp * 800;
+    const pay = sav > 0 ? inv / sav : 0;
+    const co2 = (gen * 12 * 0.075) / 1000;
+    _updateResults(count, kWp, gen, sav, inv, pay, co2);
   }
 
+  setStep(3);
   const uf = document.getElementById('stateUF').value;
-  const irr = IRR[uf]||4.8, tar = TAR[uf]||0.78;
+  const count = layout ? layout.count : panelMarkers.length;
   const kWp = (count * p.w) / 1000;
+  const irr = IRR[uf]||4.8, tar = TAR[uf]||0.78;
   const gen = kWp * irr * 30 * 0.78;
   const sav = gen * 12 * tar;
   const inv = count * p.price + kWp * 800;
   const pay = sav > 0 ? inv / sav : 0;
-  const co2 = (gen * 12 * 0.075) / 1000;
-  const fmt = n => n.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  currentSimData = { address: document.getElementById('addressInput').value||'Mapa', panels:count, monthlyKwh:gen, annualSavings:sav, investment:inv, paybackYears:pay, region:uf };
+}
 
+function _updateResults(count, kWp, gen, sav, inv, pay, co2) {
+  const fmt = n => n.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   document.getElementById('resArea').textContent = roofAreaM2.toFixed(0) + ' m²';
   document.getElementById('resPanels').textContent = count;
   document.getElementById('resPower').textContent = kWp.toFixed(1) + ' kWp';
@@ -950,10 +1016,36 @@ function placePanels() {
   document.getElementById('resInvest').textContent = 'R$ ' + fmt(inv);
   document.getElementById('resCO2').textContent = co2.toFixed(2) + ' t';
   document.getElementById('simResults').classList.add('visible');
-  setStep(3);
-
-  currentSimData = { address: document.getElementById('addressInput').value||'Mapa', panels:count, monthlyKwh:gen, annualSavings:sav, investment:inv, paybackYears:pay, region:uf };
 }
+
+function showPanelStatsOverlay(stats) {
+  // Remove existing overlay
+  const existing = document.getElementById('panelStatsOverlay');
+  if (existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'panelStatsOverlay';
+  overlay.className = 'panel-stats-overlay';
+  overlay.innerHTML = `
+    <div class="panel-stat-chip gold">
+      <span class="chip-icon">☀️</span>
+      <div><div class="chip-value">${stats.count} painéis</div><div class="chip-label">${stats.kWp.toFixed(1)} kWp</div></div>
+    </div>
+    <div class="panel-stat-chip green">
+      <span class="chip-icon">⚡</span>
+      <div><div class="chip-value">${SolarLayoutEngine.formatNumber(stats.monthlyGen)} kWh/mês</div><div class="chip-label">${stats.areaUsed.toFixed(1)} m² ocupados</div></div>
+    </div>
+    <div class="panel-stat-chip">
+      <span class="chip-icon">💰</span>
+      <div><div class="chip-value">${SolarLayoutEngine.formatCurrency(stats.annualSavings)}/ano</div><div class="chip-label">Payback ${stats.payback.toFixed(1)} anos</div></div>
+    </div>
+  `;
+  document.querySelector('.dash-main').appendChild(overlay);
+}
+
+// Remove overlay on clear
+const _origClearPanels = clearPanels;
+// (clearPanels is overwritten below to also remove overlay)
 
 function pip(pt, poly) {
   let inside = false;
@@ -964,7 +1056,14 @@ function pip(pt, poly) {
   return inside;
 }
 
-function clearPanels() { panelMarkers.forEach(m => map.removeLayer(m)); panelMarkers = []; document.getElementById('simResults').classList.remove('visible'); currentSimData = null; }
+function clearPanels() {
+  panelMarkers.forEach(m => map.removeLayer(m));
+  panelMarkers = [];
+  document.getElementById('simResults').classList.remove('visible');
+  currentSimData = null;
+  const overlay = document.getElementById('panelStatsOverlay');
+  if (overlay) overlay.remove();
+}
 function clearAll() { drawnItems.clearLayers(); clearPanels(); roofPolygon = null; roofAreaM2 = 0; document.getElementById('btnPlace').disabled = true; setStep(0); }
 
 // ══════════════════════════════════════
