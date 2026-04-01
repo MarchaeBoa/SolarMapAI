@@ -238,10 +238,10 @@
 /* ── MODAL ── */
 .dash-modal {
   position: fixed; inset: 0; z-index: 10000;
-  display: flex; align-items: center; justify-content: center;
-  opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s;
+  display: none; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.7); backdrop-filter: blur(6px);
+  padding: 20px;
 }
-.dash-modal.open { opacity: 1; visibility: visible; }
 .dash-modal-backdrop {
   position: absolute; inset: 0; background: rgba(6,12,20,0.85); backdrop-filter: blur(6px);
 }
@@ -255,6 +255,21 @@
   color: var(--muted); font-size: 1.6rem; cursor: pointer; z-index: 1;
 }
 .dash-modal-close:hover { color: var(--ice); }
+
+/* ── FORM INPUTS ── */
+.dash-input {
+  width: 100%; padding: 11px 14px; border-radius: 10px;
+  border: 1px solid rgba(238,244,255,0.12);
+  background: rgba(6,12,20,0.6); color: var(--ice);
+  font-size: 0.88rem; font-family: inherit; transition: 0.2s;
+}
+.dash-input:focus {
+  border-color: var(--gold); outline: none;
+  box-shadow: 0 0 0 2px rgba(212,168,67,0.15);
+}
+.dash-input::placeholder { color: rgba(238,244,255,0.3); }
+select.dash-input { cursor: pointer; }
+textarea.dash-input { resize: vertical; min-height: 70px; }
 
 /* ── MOBILE ── */
 .dash-mobile-toggle {
