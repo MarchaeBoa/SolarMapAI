@@ -493,6 +493,140 @@ select option {
   .float-back { top: 12px; left: 12px; padding: 8px 14px; font-size: 0.8rem; }
   .mode-tabs { top: 12px; }
   .photo-controls { flex-wrap: wrap; width: 90%; justify-content: center; }
+  .draw-toolbar { left: 10px; top: 60px; padding: 6px; }
+  .draw-panel { width: 260px; right: 10px; top: 60px; }
+  .draw-bottom-bar { left: 10px; right: 10px; }
+}
+
+/* ══════════════════════════════════════
+   DRAW PROJECT MODE — CAD-like Editor
+   ══════════════════════════════════════ */
+.draw-wrap {
+  position: absolute; inset: 0; z-index: 5;
+  background: #0c1420; display: none;
+}
+.draw-wrap.active { display: block; }
+
+.draw-canvas-area {
+  position: absolute; inset: 0;
+  overflow: hidden; cursor: crosshair;
+}
+#drawCanvas {
+  position: absolute; top: 0; left: 0;
+  image-rendering: pixelated;
+}
+
+/* Toolbar Left */
+.draw-toolbar {
+  position: absolute; top: 80px; left: 16px; z-index: 100;
+  background: rgba(6,12,20,0.92); backdrop-filter: blur(16px);
+  border: 1px solid rgba(212,168,67,0.2); border-radius: 14px;
+  padding: 10px; display: flex; flex-direction: column; gap: 4px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+.draw-toolbar-title {
+  font-size: 0.65rem; font-weight: 700; color: var(--gold);
+  text-transform: uppercase; letter-spacing: 0.8px;
+  text-align: center; padding: 4px 0 6px; border-bottom: 1px solid rgba(238,244,255,0.06);
+  margin-bottom: 4px;
+}
+.draw-tool-btn {
+  width: 42px; height: 42px; border: 1px solid rgba(238,244,255,0.08);
+  border-radius: 10px; background: rgba(238,244,255,0.03);
+  color: var(--ice); font-size: 1.1rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: 0.2s; position: relative;
+}
+.draw-tool-btn:hover { background: rgba(212,168,67,0.12); border-color: rgba(212,168,67,0.3); }
+.draw-tool-btn.active {
+  background: rgba(212,168,67,0.2); border-color: var(--gold);
+  box-shadow: 0 0 12px rgba(212,168,67,0.2);
+}
+.draw-toolbar-divider {
+  height: 1px; background: rgba(238,244,255,0.08); margin: 4px 0;
+}
+
+/* Right Panel */
+.draw-panel {
+  position: absolute; top: 80px; right: 16px; z-index: 100;
+  width: 300px; max-height: calc(100vh - 120px); overflow-y: auto;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.draw-panel::-webkit-scrollbar { width: 4px; }
+.draw-panel::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 99px; }
+.draw-panel-card {
+  background: rgba(6,12,20,0.92); backdrop-filter: blur(16px);
+  border: 1px solid rgba(238,244,255,0.08); border-radius: 14px;
+  padding: 16px;
+}
+.draw-panel-card h4 {
+  font-size: 0.85rem; font-weight: 700; color: var(--ice);
+  margin: 0 0 12px 0; display: flex; align-items: center; gap: 6px;
+}
+.draw-field { margin-bottom: 10px; }
+.draw-field label {
+  display: block; font-size: 0.75rem; font-weight: 600;
+  color: var(--muted); margin-bottom: 4px;
+}
+.draw-input {
+  width: 100%; padding: 8px 12px; border-radius: 8px;
+  border: 1px solid rgba(238,244,255,0.1);
+  background: rgba(6,12,20,0.6); color: var(--ice);
+  font-size: 0.82rem; font-family: inherit;
+}
+.draw-input:focus { border-color: var(--gold); outline: none; }
+.draw-color-btn {
+  width: 26px; height: 26px; border-radius: 50%;
+  border: 2px solid rgba(238,244,255,0.15); cursor: pointer;
+  transition: 0.2s;
+}
+.draw-color-btn:hover { transform: scale(1.15); }
+.draw-color-btn.active { border-color: #fff; box-shadow: 0 0 8px rgba(255,255,255,0.3); }
+.draw-toggle {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.82rem; color: var(--ice); cursor: pointer;
+  margin-bottom: 6px;
+}
+.draw-toggle input { accent-color: var(--gold); }
+.draw-info-row {
+  display: flex; justify-content: space-between;
+  font-size: 0.82rem; padding: 4px 0;
+  border-bottom: 1px solid rgba(238,244,255,0.04);
+}
+.draw-info-row span { color: var(--muted); }
+.draw-info-row strong { color: var(--ice); }
+.draw-btn-simulate {
+  width: 100%; padding: 12px; border: none; border-radius: 10px;
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  color: var(--midnight); font-weight: 700; font-size: 0.88rem;
+  font-family: inherit; cursor: pointer; transition: 0.2s;
+}
+.draw-btn-simulate:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(212,168,67,0.4); }
+
+/* Bottom Bar */
+.draw-bottom-bar {
+  position: absolute; bottom: 16px; left: 80px; right: 330px; z-index: 100;
+  display: flex; justify-content: space-between; align-items: center;
+  background: rgba(6,12,20,0.88); backdrop-filter: blur(16px);
+  border: 1px solid rgba(238,244,255,0.08); border-radius: 12px;
+  padding: 8px 16px;
+}
+.draw-bottom-group { display: flex; align-items: center; gap: 8px; }
+.draw-bottom-btn {
+  padding: 6px 12px; border: 1px solid rgba(238,244,255,0.1);
+  border-radius: 8px; background: rgba(238,244,255,0.04);
+  color: var(--ice); font-size: 0.8rem; cursor: pointer; transition: 0.2s;
+}
+.draw-bottom-btn:hover { background: rgba(212,168,67,0.15); border-color: rgba(212,168,67,0.3); }
+.draw-zoom-label { font-size: 0.78rem; color: var(--gold); font-weight: 600; min-width: 40px; }
+
+/* Measure tooltip */
+.draw-measure-tip {
+  position: absolute; z-index: 200;
+  background: rgba(6,12,20,0.92); border: 1px solid var(--gold);
+  border-radius: 8px; padding: 4px 10px; pointer-events: none;
+  font-size: 0.78rem; font-weight: 700; color: var(--gold);
+  white-space: nowrap;
 }
 </style>
 </head>
@@ -503,6 +637,119 @@ select option {
   <button class="mode-tab active" onclick="switchMode('map')">🗺️ Mapa Satélite</button>
   <button class="mode-tab" onclick="switchMode('draw')">📐 Desenhar Telhado</button>
   <button class="mode-tab" onclick="switchMode('photo')">📷 Upload Foto</button>
+</div>
+
+<!-- ══ DRAW PROJECT MODE ══ -->
+<div class="draw-wrap" id="drawMode" style="display:none;">
+  <a href="dashboard.html" class="float-back" style="z-index:200;">← Dashboard</a>
+
+  <!-- Toolbar Left -->
+  <div class="draw-toolbar" id="drawToolbar">
+    <div class="draw-toolbar-title">Ferramentas</div>
+    <button class="draw-tool-btn active" data-tool="select" title="Selecionar / Mover (V)">🔲</button>
+    <button class="draw-tool-btn" data-tool="line" title="Linha (L)">📏</button>
+    <button class="draw-tool-btn" data-tool="rect" title="Retângulo (R)">⬜</button>
+    <button class="draw-tool-btn" data-tool="polygon" title="Polígono (P)">🔷</button>
+    <button class="draw-tool-btn" data-tool="circle" title="Círculo (C)">⭕</button>
+    <button class="draw-tool-btn" data-tool="measure" title="Medir (M)">📐</button>
+    <button class="draw-tool-btn" data-tool="text" title="Texto (T)">🔤</button>
+    <button class="draw-tool-btn" data-tool="eraser" title="Apagar (E)">🗑️</button>
+    <div class="draw-toolbar-divider"></div>
+    <button class="draw-tool-btn" onclick="drawUndo()" title="Desfazer (Ctrl+Z)">↩️</button>
+    <button class="draw-tool-btn" onclick="drawRedo()" title="Refazer (Ctrl+Y)">↪️</button>
+    <div class="draw-toolbar-divider"></div>
+    <button class="draw-tool-btn" onclick="drawClearAll()" title="Limpar tudo">🧹</button>
+  </div>
+
+  <!-- Canvas Area -->
+  <div class="draw-canvas-area" id="drawCanvasArea">
+    <canvas id="drawCanvas"></canvas>
+    <!-- Measure tooltip -->
+    <div class="draw-measure-tip" id="drawMeasureTip" style="display:none;"></div>
+  </div>
+
+  <!-- Right Panel -->
+  <div class="draw-panel">
+    <div class="draw-panel-card">
+      <h4>📐 Escala do Projeto</h4>
+      <div class="draw-field">
+        <label>Escala: 1 quadrado =</label>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input type="number" id="drawScale" value="0.5" min="0.1" max="10" step="0.1" class="draw-input" style="width:70px;" onchange="drawUpdateScale()">
+          <span style="color:var(--muted);font-size:0.82rem;">metros</span>
+        </div>
+      </div>
+      <div class="draw-field">
+        <label>Cor do traço</label>
+        <div style="display:flex;gap:6px;">
+          <button class="draw-color-btn active" data-color="#1FD8A4" style="background:#1FD8A4;" onclick="drawSetColor(this,'#1FD8A4')"></button>
+          <button class="draw-color-btn" data-color="#FFD96A" style="background:#FFD96A;" onclick="drawSetColor(this,'#FFD96A')"></button>
+          <button class="draw-color-btn" data-color="#5AAFFF" style="background:#5AAFFF;" onclick="drawSetColor(this,'#5AAFFF')"></button>
+          <button class="draw-color-btn" data-color="#FF6B6B" style="background:#FF6B6B;" onclick="drawSetColor(this,'#FF6B6B')"></button>
+          <button class="draw-color-btn" data-color="#FFFFFF" style="background:#FFFFFF;" onclick="drawSetColor(this,'#FFFFFF')"></button>
+        </div>
+      </div>
+      <div class="draw-field">
+        <label>Espessura: <span id="drawStrokeVal">2</span>px</label>
+        <input type="range" id="drawStrokeWidth" min="1" max="8" value="2" oninput="drawStrokeW=parseInt(this.value);document.getElementById('drawStrokeVal').textContent=this.value;">
+      </div>
+    </div>
+
+    <div class="draw-panel-card">
+      <h4>⚙️ Opções</h4>
+      <label class="draw-toggle">
+        <input type="checkbox" id="drawGridToggle" checked onchange="drawShowGrid=this.checked;drawRender();">
+        <span>Mostrar grid</span>
+      </label>
+      <label class="draw-toggle">
+        <input type="checkbox" id="drawSnapToggle" checked onchange="drawSnapGrid=this.checked;">
+        <span>Snap to grid</span>
+      </label>
+    </div>
+
+    <div class="draw-panel-card">
+      <h4>📊 Informações</h4>
+      <div class="draw-info-row"><span>Formas:</span><strong id="drawShapeCount">0</strong></div>
+      <div class="draw-info-row"><span>Área total:</span><strong id="drawTotalArea">0 m²</strong></div>
+      <div class="draw-info-row"><span>Perímetro:</span><strong id="drawTotalPerimeter">0 m</strong></div>
+    </div>
+
+    <div class="draw-panel-card">
+      <h4>☀️ Simulação</h4>
+      <div class="draw-field">
+        <label>Painel</label>
+        <select id="drawPanelType" class="draw-input">
+          <option value="mono-400">Mono 400W (1.04×2.10m)</option>
+          <option value="bi-450">Bifacial 450W</option>
+          <option value="mono-550">Premium 550W</option>
+          <option value="compact-400">Compacto 400W</option>
+        </select>
+      </div>
+      <div class="draw-field">
+        <label>Estado</label>
+        <select id="drawStateUF" class="draw-input">
+          <option value="SP">São Paulo</option><option value="RJ">Rio de Janeiro</option><option value="MG">Minas Gerais</option>
+          <option value="MS" selected>Mato Grosso do Sul</option><option value="PR">Paraná</option><option value="RS">Rio Grande do Sul</option>
+          <option value="BA">Bahia</option><option value="GO">Goiás</option><option value="CE">Ceará</option><option value="DF">Distrito Federal</option>
+        </select>
+      </div>
+      <button class="draw-btn-simulate" onclick="drawSimulate()">☀️ Simular Painéis no Telhado</button>
+      <div id="drawSimResults" style="display:none;margin-top:12px;"></div>
+    </div>
+  </div>
+
+  <!-- Bottom Bar -->
+  <div class="draw-bottom-bar">
+    <div class="draw-bottom-group">
+      <button class="draw-bottom-btn" onclick="drawZoom(1.2)" title="Zoom +">🔍+</button>
+      <button class="draw-bottom-btn" onclick="drawZoom(1/1.2)" title="Zoom -">🔍−</button>
+      <button class="draw-bottom-btn" onclick="drawResetView()" title="Reset zoom">↺</button>
+      <span class="draw-zoom-label" id="drawZoomLabel">100%</span>
+    </div>
+    <div class="draw-bottom-group">
+      <span style="color:var(--muted);font-size:0.75rem;" id="drawCursorPos">X: 0  Y: 0</span>
+    </div>
+  </div>
 </div>
 
 <!-- ══ PHOTO MODE ══ -->
@@ -1411,6 +1658,628 @@ async function saveManualSim() {
 // ══════════════════════════════════════
 // MODE SWITCHER
 // ══════════════════════════════════════
+// ══════════════════════════════════════
+// DRAW PROJECT ENGINE — CAD-like editor
+// ══════════════════════════════════════
+let drawCanvas, drawCtx;
+let drawShapes = [];
+let drawUndoStack = [];
+let drawRedoStack = [];
+let drawCurrentTool = 'select';
+let drawStrokeColor = '#1FD8A4';
+let drawStrokeW = 2;
+let drawShowGrid = true;
+let drawSnapGrid = true;
+let drawGridSize = 20;
+let drawScale = 0.5; // meters per grid square
+let drawZoomLevel = 1;
+let drawPanX = 0, drawPanY = 0;
+let drawIsDrawing = false;
+let drawStartX = 0, drawStartY = 0;
+let drawTempPoints = [];
+let drawIsPanning = false;
+let drawPanStartX = 0, drawPanStartY = 0;
+let drawSelectedShape = null;
+let drawDragOffsetX = 0, drawDragOffsetY = 0;
+let drawInitialized = false;
+
+function drawInit() {
+  if (drawInitialized) return;
+  drawCanvas = document.getElementById('drawCanvas');
+  drawCtx = drawCanvas.getContext('2d');
+  drawResize();
+  window.addEventListener('resize', drawResize);
+
+  // Tool buttons
+  document.querySelectorAll('.draw-tool-btn[data-tool]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      drawCurrentTool = btn.dataset.tool;
+      document.querySelectorAll('.draw-tool-btn[data-tool]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      drawCanvas.style.cursor = drawCurrentTool === 'select' ? 'default' :
+        drawCurrentTool === 'eraser' ? 'not-allowed' :
+        drawCurrentTool === 'text' ? 'text' : 'crosshair';
+      drawTempPoints = [];
+    });
+  });
+
+  // Canvas events
+  drawCanvas.addEventListener('mousedown', drawOnMouseDown);
+  drawCanvas.addEventListener('mousemove', drawOnMouseMove);
+  drawCanvas.addEventListener('mouseup', drawOnMouseUp);
+  drawCanvas.addEventListener('dblclick', drawOnDblClick);
+  drawCanvas.addEventListener('wheel', drawOnWheel, { passive: false });
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', function(e) {
+    if (document.getElementById('drawMode').style.display === 'none') return;
+    if (e.ctrlKey && e.key === 'z') { e.preventDefault(); drawUndo(); }
+    if (e.ctrlKey && e.key === 'y') { e.preventDefault(); drawRedo(); }
+    if (e.key === 'v' || e.key === 'V') drawSelectTool('select');
+    if (e.key === 'l' || e.key === 'L') drawSelectTool('line');
+    if (e.key === 'r' || e.key === 'R') drawSelectTool('rect');
+    if (e.key === 'p' || e.key === 'P') drawSelectTool('polygon');
+    if (e.key === 'c' || e.key === 'C') drawSelectTool('circle');
+    if (e.key === 'm' || e.key === 'M') drawSelectTool('measure');
+    if (e.key === 't' || e.key === 'T') drawSelectTool('text');
+    if (e.key === 'e' || e.key === 'E') drawSelectTool('eraser');
+    if (e.key === 'Delete' && drawSelectedShape !== null) {
+      drawShapes.splice(drawSelectedShape, 1);
+      drawSelectedShape = null;
+      drawSaveUndo(); drawRender(); drawUpdateInfo();
+    }
+  });
+
+  drawInitialized = true;
+  drawRender();
+}
+
+function drawSelectTool(tool) {
+  drawCurrentTool = tool;
+  document.querySelectorAll('.draw-tool-btn[data-tool]').forEach(b => {
+    b.classList.toggle('active', b.dataset.tool === tool);
+  });
+  drawTempPoints = [];
+}
+
+function drawResize() {
+  const area = document.getElementById('drawCanvasArea');
+  drawCanvas.width = area.clientWidth;
+  drawCanvas.height = area.clientHeight;
+  drawRender();
+}
+
+function drawSnap(x, y) {
+  if (!drawSnapGrid) return { x, y };
+  const g = drawGridSize * drawZoomLevel;
+  return {
+    x: Math.round(x / g) * g,
+    y: Math.round(y / g) * g
+  };
+}
+
+function drawScreenToWorld(sx, sy) {
+  return { x: (sx - drawPanX) / drawZoomLevel, y: (sy - drawPanY) / drawZoomLevel };
+}
+
+function drawWorldToScreen(wx, wy) {
+  return { x: wx * drawZoomLevel + drawPanX, y: wy * drawZoomLevel + drawPanY };
+}
+
+// ── RENDER ──
+function drawRender() {
+  if (!drawCtx) return;
+  const W = drawCanvas.width, H = drawCanvas.height;
+  drawCtx.clearRect(0, 0, W, H);
+
+  // Background
+  drawCtx.fillStyle = '#0e1a2a';
+  drawCtx.fillRect(0, 0, W, H);
+
+  // Grid
+  if (drawShowGrid) {
+    const g = drawGridSize * drawZoomLevel;
+    const offX = drawPanX % g;
+    const offY = drawPanY % g;
+
+    // Minor grid
+    drawCtx.strokeStyle = 'rgba(238,244,255,0.06)';
+    drawCtx.lineWidth = 0.5;
+    for (let x = offX; x < W; x += g) {
+      drawCtx.beginPath(); drawCtx.moveTo(x, 0); drawCtx.lineTo(x, H); drawCtx.stroke();
+    }
+    for (let y = offY; y < H; y += g) {
+      drawCtx.beginPath(); drawCtx.moveTo(0, y); drawCtx.lineTo(W, y); drawCtx.stroke();
+    }
+
+    // Major grid (every 5)
+    const g5 = g * 5;
+    const offX5 = drawPanX % g5;
+    const offY5 = drawPanY % g5;
+    drawCtx.strokeStyle = 'rgba(238,244,255,0.12)';
+    drawCtx.lineWidth = 1;
+    for (let x = offX5; x < W; x += g5) {
+      drawCtx.beginPath(); drawCtx.moveTo(x, 0); drawCtx.lineTo(x, H); drawCtx.stroke();
+    }
+    for (let y = offY5; y < H; y += g5) {
+      drawCtx.beginPath(); drawCtx.moveTo(0, y); drawCtx.lineTo(W, y); drawCtx.stroke();
+    }
+  }
+
+  // Origin marker
+  const o = drawWorldToScreen(0, 0);
+  drawCtx.fillStyle = 'rgba(212,168,67,0.5)';
+  drawCtx.beginPath(); drawCtx.arc(o.x, o.y, 4, 0, Math.PI * 2); drawCtx.fill();
+
+  // Draw all shapes
+  drawShapes.forEach((s, i) => {
+    drawCtx.save();
+    drawCtx.strokeStyle = s.color || '#1FD8A4';
+    drawCtx.lineWidth = (s.strokeWidth || 2) * drawZoomLevel;
+    drawCtx.lineJoin = 'round'; drawCtx.lineCap = 'round';
+
+    if (i === drawSelectedShape) {
+      drawCtx.shadowColor = 'rgba(212,168,67,0.6)';
+      drawCtx.shadowBlur = 12;
+    }
+
+    const toS = (wx, wy) => drawWorldToScreen(wx, wy);
+
+    if (s.type === 'line') {
+      const a = toS(s.x1, s.y1), b = toS(s.x2, s.y2);
+      drawCtx.beginPath(); drawCtx.moveTo(a.x, a.y); drawCtx.lineTo(b.x, b.y); drawCtx.stroke();
+    } else if (s.type === 'rect') {
+      const a = toS(s.x, s.y);
+      drawCtx.strokeRect(a.x, a.y, s.w * drawZoomLevel, s.h * drawZoomLevel);
+      drawCtx.fillStyle = (s.color || '#1FD8A4') + '15';
+      drawCtx.fillRect(a.x, a.y, s.w * drawZoomLevel, s.h * drawZoomLevel);
+    } else if (s.type === 'circle') {
+      const c = toS(s.cx, s.cy);
+      drawCtx.beginPath(); drawCtx.arc(c.x, c.y, s.r * drawZoomLevel, 0, Math.PI * 2);
+      drawCtx.stroke();
+      drawCtx.fillStyle = (s.color || '#1FD8A4') + '10';
+      drawCtx.fill();
+    } else if (s.type === 'polygon') {
+      if (s.points.length > 1) {
+        drawCtx.beginPath();
+        const p0 = toS(s.points[0].x, s.points[0].y);
+        drawCtx.moveTo(p0.x, p0.y);
+        for (let j = 1; j < s.points.length; j++) {
+          const p = toS(s.points[j].x, s.points[j].y);
+          drawCtx.lineTo(p.x, p.y);
+        }
+        drawCtx.closePath(); drawCtx.stroke();
+        drawCtx.fillStyle = (s.color || '#1FD8A4') + '12';
+        drawCtx.fill();
+      }
+    } else if (s.type === 'text') {
+      const p = toS(s.x, s.y);
+      drawCtx.font = (14 * drawZoomLevel) + 'px "Plus Jakarta Sans", sans-serif';
+      drawCtx.fillStyle = s.color || '#1FD8A4';
+      drawCtx.fillText(s.text, p.x, p.y);
+    }
+    drawCtx.restore();
+  });
+
+  // Temp drawing preview
+  if (drawIsDrawing && drawTempPoints.length > 0) {
+    drawCtx.save();
+    drawCtx.strokeStyle = drawStrokeColor;
+    drawCtx.lineWidth = drawStrokeW * drawZoomLevel;
+    drawCtx.setLineDash([6, 4]);
+
+    if (drawCurrentTool === 'line' || drawCurrentTool === 'measure') {
+      const a = drawWorldToScreen(drawTempPoints[0].x, drawTempPoints[0].y);
+      const b = drawWorldToScreen(drawTempPoints[1].x, drawTempPoints[1].y);
+      drawCtx.beginPath(); drawCtx.moveTo(a.x, a.y); drawCtx.lineTo(b.x, b.y); drawCtx.stroke();
+    } else if (drawCurrentTool === 'rect') {
+      const a = drawWorldToScreen(drawTempPoints[0].x, drawTempPoints[0].y);
+      const w = (drawTempPoints[1].x - drawTempPoints[0].x) * drawZoomLevel;
+      const h = (drawTempPoints[1].y - drawTempPoints[0].y) * drawZoomLevel;
+      drawCtx.strokeRect(a.x, a.y, w, h);
+    } else if (drawCurrentTool === 'circle') {
+      const c = drawWorldToScreen(drawTempPoints[0].x, drawTempPoints[0].y);
+      const dx = drawTempPoints[1].x - drawTempPoints[0].x;
+      const dy = drawTempPoints[1].y - drawTempPoints[0].y;
+      const r = Math.sqrt(dx*dx + dy*dy) * drawZoomLevel;
+      drawCtx.beginPath(); drawCtx.arc(c.x, c.y, r, 0, Math.PI*2); drawCtx.stroke();
+    } else if (drawCurrentTool === 'polygon' && drawTempPoints.length > 0) {
+      drawCtx.beginPath();
+      const p0 = drawWorldToScreen(drawTempPoints[0].x, drawTempPoints[0].y);
+      drawCtx.moveTo(p0.x, p0.y);
+      for (let i = 1; i < drawTempPoints.length; i++) {
+        const p = drawWorldToScreen(drawTempPoints[i].x, drawTempPoints[i].y);
+        drawCtx.lineTo(p.x, p.y);
+      }
+      drawCtx.stroke();
+    }
+    drawCtx.restore();
+  }
+}
+
+// ── MOUSE EVENTS ──
+function drawOnMouseDown(e) {
+  const rect = drawCanvas.getBoundingClientRect();
+  const sx = e.clientX - rect.left;
+  const sy = e.clientY - rect.top;
+  const w = drawScreenToWorld(sx, sy);
+  const snapped = drawSnap(w.x, w.y);
+
+  // Middle click or space for pan
+  if (e.button === 1 || (e.button === 0 && e.altKey)) {
+    drawIsPanning = true;
+    drawPanStartX = sx - drawPanX;
+    drawPanStartY = sy - drawPanY;
+    drawCanvas.style.cursor = 'grabbing';
+    e.preventDefault();
+    return;
+  }
+
+  if (drawCurrentTool === 'select') {
+    // Hit test shapes
+    drawSelectedShape = null;
+    for (let i = drawShapes.length - 1; i >= 0; i--) {
+      if (drawHitTest(drawShapes[i], w.x, w.y)) {
+        drawSelectedShape = i;
+        drawDragOffsetX = w.x; drawDragOffsetY = w.y;
+        break;
+      }
+    }
+    drawRender();
+    return;
+  }
+
+  if (drawCurrentTool === 'eraser') {
+    for (let i = drawShapes.length - 1; i >= 0; i--) {
+      if (drawHitTest(drawShapes[i], w.x, w.y)) {
+        drawShapes.splice(i, 1);
+        drawSaveUndo(); drawRender(); drawUpdateInfo();
+        return;
+      }
+    }
+    return;
+  }
+
+  if (drawCurrentTool === 'text') {
+    const text = prompt('Digite o texto:');
+    if (text) {
+      drawShapes.push({ type: 'text', x: snapped.x, y: snapped.y, text, color: drawStrokeColor, strokeWidth: drawStrokeW });
+      drawSaveUndo(); drawRender(); drawUpdateInfo();
+    }
+    return;
+  }
+
+  if (drawCurrentTool === 'polygon') {
+    if (!drawIsDrawing) {
+      drawIsDrawing = true;
+      drawTempPoints = [{ x: snapped.x, y: snapped.y }];
+    } else {
+      drawTempPoints.push({ x: snapped.x, y: snapped.y });
+    }
+    drawRender();
+    return;
+  }
+
+  // Line, rect, circle, measure
+  drawIsDrawing = true;
+  drawTempPoints = [{ x: snapped.x, y: snapped.y }, { x: snapped.x, y: snapped.y }];
+}
+
+function drawOnMouseMove(e) {
+  const rect = drawCanvas.getBoundingClientRect();
+  const sx = e.clientX - rect.left;
+  const sy = e.clientY - rect.top;
+  const w = drawScreenToWorld(sx, sy);
+  const snapped = drawSnap(w.x, w.y);
+
+  // Cursor position
+  const meters = { x: (w.x / drawGridSize * drawScale).toFixed(2), y: (w.y / drawGridSize * drawScale).toFixed(2) };
+  const posEl = document.getElementById('drawCursorPos');
+  if (posEl) posEl.textContent = 'X: ' + meters.x + 'm  Y: ' + meters.y + 'm';
+
+  if (drawIsPanning) {
+    drawPanX = sx - drawPanStartX;
+    drawPanY = sy - drawPanStartY;
+    drawRender();
+    return;
+  }
+
+  // Drag selected shape
+  if (drawCurrentTool === 'select' && drawSelectedShape !== null && e.buttons === 1) {
+    const s = drawShapes[drawSelectedShape];
+    const dx = w.x - drawDragOffsetX;
+    const dy = w.y - drawDragOffsetY;
+    if (s.type === 'line') { s.x1 += dx; s.y1 += dy; s.x2 += dx; s.y2 += dy; }
+    else if (s.type === 'rect') { s.x += dx; s.y += dy; }
+    else if (s.type === 'circle') { s.cx += dx; s.cy += dy; }
+    else if (s.type === 'polygon') { s.points.forEach(p => { p.x += dx; p.y += dy; }); }
+    else if (s.type === 'text') { s.x += dx; s.y += dy; }
+    drawDragOffsetX = w.x; drawDragOffsetY = w.y;
+    drawRender();
+    return;
+  }
+
+  if (!drawIsDrawing || drawTempPoints.length < 2) {
+    if (drawIsDrawing && drawCurrentTool === 'polygon' && drawTempPoints.length >= 1) {
+      // Update polygon preview with cursor
+      if (drawTempPoints.length > 1) drawTempPoints.pop();
+      drawTempPoints.push({ x: snapped.x, y: snapped.y });
+      drawRender();
+    }
+    return;
+  }
+
+  drawTempPoints[drawTempPoints.length - 1] = { x: snapped.x, y: snapped.y };
+
+  // Measure tooltip
+  if (drawCurrentTool === 'measure' || drawCurrentTool === 'line') {
+    const dx = (drawTempPoints[1].x - drawTempPoints[0].x) / drawGridSize * drawScale;
+    const dy = (drawTempPoints[1].y - drawTempPoints[0].y) / drawGridSize * drawScale;
+    const dist = Math.sqrt(dx*dx + dy*dy).toFixed(2);
+    const tip = document.getElementById('drawMeasureTip');
+    tip.style.display = 'block';
+    tip.style.left = (sx + 15) + 'px';
+    tip.style.top = (sy - 10) + 'px';
+    tip.textContent = dist + ' m';
+  }
+
+  drawRender();
+}
+
+function drawOnMouseUp(e) {
+  if (drawIsPanning) { drawIsPanning = false; drawCanvas.style.cursor = 'crosshair'; return; }
+
+  document.getElementById('drawMeasureTip').style.display = 'none';
+
+  if (!drawIsDrawing || drawCurrentTool === 'polygon') return;
+
+  const p = drawTempPoints;
+  if (p.length < 2) { drawIsDrawing = false; return; }
+
+  if (drawCurrentTool === 'line') {
+    drawShapes.push({ type: 'line', x1: p[0].x, y1: p[0].y, x2: p[1].x, y2: p[1].y, color: drawStrokeColor, strokeWidth: drawStrokeW });
+  } else if (drawCurrentTool === 'rect') {
+    drawShapes.push({ type: 'rect', x: Math.min(p[0].x,p[1].x), y: Math.min(p[0].y,p[1].y), w: Math.abs(p[1].x-p[0].x), h: Math.abs(p[1].y-p[0].y), color: drawStrokeColor, strokeWidth: drawStrokeW });
+  } else if (drawCurrentTool === 'circle') {
+    const dx = p[1].x - p[0].x, dy = p[1].y - p[0].y;
+    drawShapes.push({ type: 'circle', cx: p[0].x, cy: p[0].y, r: Math.sqrt(dx*dx+dy*dy), color: drawStrokeColor, strokeWidth: drawStrokeW });
+  } else if (drawCurrentTool === 'measure') {
+    // Measure doesn't create a permanent shape, just shows the distance
+  }
+
+  drawIsDrawing = false;
+  drawTempPoints = [];
+  if (drawCurrentTool !== 'measure') { drawSaveUndo(); }
+  drawRender(); drawUpdateInfo();
+}
+
+function drawOnDblClick(e) {
+  if (drawCurrentTool === 'polygon' && drawTempPoints.length >= 3) {
+    drawTempPoints.pop(); // remove duplicate
+    drawShapes.push({ type: 'polygon', points: [...drawTempPoints], color: drawStrokeColor, strokeWidth: drawStrokeW });
+    drawIsDrawing = false;
+    drawTempPoints = [];
+    drawSaveUndo(); drawRender(); drawUpdateInfo();
+  }
+}
+
+function drawOnWheel(e) {
+  e.preventDefault();
+  const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+  drawZoom(factor, e.clientX - drawCanvas.getBoundingClientRect().left, e.clientY - drawCanvas.getBoundingClientRect().top);
+}
+
+// ── HIT TEST ──
+function drawHitTest(s, wx, wy) {
+  const margin = 8 / drawZoomLevel;
+  if (s.type === 'line') {
+    const d = distPointToLine(wx, wy, s.x1, s.y1, s.x2, s.y2);
+    return d < margin;
+  } else if (s.type === 'rect') {
+    return wx >= s.x - margin && wx <= s.x + s.w + margin && wy >= s.y - margin && wy <= s.y + s.h + margin;
+  } else if (s.type === 'circle') {
+    const dx = wx - s.cx, dy = wy - s.cy;
+    return Math.abs(Math.sqrt(dx*dx+dy*dy) - s.r) < margin;
+  } else if (s.type === 'polygon') {
+    return pointInPoly(wx, wy, s.points);
+  } else if (s.type === 'text') {
+    return wx >= s.x - margin && wx <= s.x + 100 && wy >= s.y - 20 && wy <= s.y + margin;
+  }
+  return false;
+}
+
+function distPointToLine(px, py, x1, y1, x2, y2) {
+  const A = px - x1, B = py - y1, C = x2 - x1, D = y2 - y1;
+  const dot = A*C + B*D, lenSq = C*C + D*D;
+  let param = lenSq !== 0 ? dot / lenSq : -1;
+  param = Math.max(0, Math.min(1, param));
+  const xx = x1 + param * C, yy = y1 + param * D;
+  return Math.sqrt((px-xx)*(px-xx) + (py-yy)*(py-yy));
+}
+
+function pointInPoly(x, y, pts) {
+  let inside = false;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    if ((pts[i].y > y) !== (pts[j].y > y) && x < (pts[j].x - pts[i].x) * (y - pts[i].y) / (pts[j].y - pts[i].y) + pts[i].x)
+      inside = !inside;
+  }
+  return inside;
+}
+
+// ── UNDO/REDO ──
+function drawSaveUndo() {
+  drawUndoStack.push(JSON.stringify(drawShapes));
+  drawRedoStack = [];
+  if (drawUndoStack.length > 50) drawUndoStack.shift();
+}
+
+function drawUndo() {
+  if (drawUndoStack.length === 0) return;
+  drawRedoStack.push(JSON.stringify(drawShapes));
+  drawShapes = JSON.parse(drawUndoStack.pop());
+  drawRender(); drawUpdateInfo();
+}
+
+function drawRedo() {
+  if (drawRedoStack.length === 0) return;
+  drawUndoStack.push(JSON.stringify(drawShapes));
+  drawShapes = JSON.parse(drawRedoStack.pop());
+  drawRender(); drawUpdateInfo();
+}
+
+function drawClearAll() {
+  if (drawShapes.length === 0) return;
+  if (!confirm('Limpar todo o desenho?')) return;
+  drawSaveUndo();
+  drawShapes = [];
+  drawSelectedShape = null;
+  drawRender(); drawUpdateInfo();
+}
+
+// ── ZOOM/PAN ──
+function drawZoom(factor, cx, cy) {
+  cx = cx || drawCanvas.width / 2;
+  cy = cy || drawCanvas.height / 2;
+  const oldZoom = drawZoomLevel;
+  drawZoomLevel = Math.max(0.2, Math.min(10, drawZoomLevel * factor));
+  drawPanX = cx - (cx - drawPanX) * (drawZoomLevel / oldZoom);
+  drawPanY = cy - (cy - drawPanY) * (drawZoomLevel / oldZoom);
+  document.getElementById('drawZoomLabel').textContent = Math.round(drawZoomLevel * 100) + '%';
+  drawRender();
+}
+
+function drawResetView() {
+  drawZoomLevel = 1; drawPanX = 0; drawPanY = 0;
+  document.getElementById('drawZoomLabel').textContent = '100%';
+  drawRender();
+}
+
+function drawUpdateScale() {
+  drawScale = parseFloat(document.getElementById('drawScale').value) || 0.5;
+  drawUpdateInfo();
+}
+
+function drawSetColor(btn, color) {
+  drawStrokeColor = color;
+  document.querySelectorAll('.draw-color-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ── INFO UPDATE ──
+function drawUpdateInfo() {
+  document.getElementById('drawShapeCount').textContent = drawShapes.length;
+
+  let totalArea = 0, totalPerimeter = 0;
+  const pxToM = drawScale / drawGridSize;
+
+  drawShapes.forEach(s => {
+    if (s.type === 'rect') {
+      totalArea += Math.abs(s.w * s.h) * pxToM * pxToM;
+      totalPerimeter += 2 * (Math.abs(s.w) + Math.abs(s.h)) * pxToM;
+    } else if (s.type === 'circle') {
+      totalArea += Math.PI * s.r * s.r * pxToM * pxToM;
+      totalPerimeter += 2 * Math.PI * s.r * pxToM;
+    } else if (s.type === 'polygon' && s.points.length >= 3) {
+      // Shoelace formula
+      let a = 0, p = 0;
+      for (let i = 0; i < s.points.length; i++) {
+        const j = (i + 1) % s.points.length;
+        a += s.points[i].x * s.points[j].y - s.points[j].x * s.points[i].y;
+        const dx = s.points[j].x - s.points[i].x, dy = s.points[j].y - s.points[i].y;
+        p += Math.sqrt(dx*dx + dy*dy);
+      }
+      totalArea += Math.abs(a / 2) * pxToM * pxToM;
+      totalPerimeter += p * pxToM;
+    }
+  });
+
+  document.getElementById('drawTotalArea').textContent = totalArea.toFixed(1) + ' m²';
+  document.getElementById('drawTotalPerimeter').textContent = totalPerimeter.toFixed(1) + ' m';
+}
+
+// ── SIMULATE PANELS ──
+function drawSimulate() {
+  const resDiv = document.getElementById('drawSimResults');
+  let totalArea = 0;
+  const pxToM = drawScale / drawGridSize;
+
+  drawShapes.forEach(s => {
+    if (s.type === 'rect') totalArea += Math.abs(s.w * s.h) * pxToM * pxToM;
+    else if (s.type === 'circle') totalArea += Math.PI * s.r * s.r * pxToM * pxToM;
+    else if (s.type === 'polygon' && s.points.length >= 3) {
+      let a = 0;
+      for (let i = 0; i < s.points.length; i++) {
+        const j = (i + 1) % s.points.length;
+        a += s.points[i].x * s.points[j].y - s.points[j].x * s.points[i].y;
+      }
+      totalArea += Math.abs(a / 2) * pxToM * pxToM;
+    }
+  });
+
+  if (totalArea < 2) {
+    resDiv.style.display = 'block';
+    resDiv.innerHTML = '<p style="color:#ff6b6b;font-size:0.82rem;">Desenhe o telhado primeiro (retângulo ou polígono) para simular os painéis.</p>';
+    return;
+  }
+
+  const panelKey = document.getElementById('drawPanelType').value;
+  const model = (typeof SolarLayoutEngine !== 'undefined') ? SolarLayoutEngine.PANEL_MODELS[panelKey] : PD[panelKey];
+  const pw = model.width || model.pw || 1.04;
+  const ph = model.height || model.ph || 2.10;
+  const watt = model.watt || model.w || 400;
+  const price = model.price || 850;
+  const panelArea = pw * ph;
+
+  // Usable area (~85% of total with margins and gaps)
+  const usableArea = totalArea * 0.82;
+  const panelCount = Math.floor(usableArea / panelArea);
+  const kWp = (panelCount * watt) / 1000;
+
+  const uf = document.getElementById('drawStateUF').value;
+  const irr = IRR[uf] || 4.8;
+  const tar = TAR[uf] || 0.76;
+  const gen = kWp * irr * 30 * 0.78;
+  const savYear = gen * 12 * tar;
+  const invest = panelCount * price + kWp * 800;
+  const payback = savYear > 0 ? invest / savYear : 0;
+
+  const fmt = n => n.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+  resDiv.style.display = 'block';
+  resDiv.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:0.8rem;">
+      <div style="padding:8px;background:rgba(212,168,67,0.1);border-radius:8px;text-align:center;">
+        <div style="color:var(--muted);font-size:0.68rem;">PAINÉIS</div>
+        <div style="color:var(--gold);font-weight:800;font-size:1.1rem;">${panelCount}</div>
+      </div>
+      <div style="padding:8px;background:rgba(31,216,164,0.1);border-radius:8px;text-align:center;">
+        <div style="color:var(--muted);font-size:0.68rem;">POTÊNCIA</div>
+        <div style="color:var(--green);font-weight:800;font-size:1.1rem;">${kWp.toFixed(1)} kWp</div>
+      </div>
+      <div style="padding:8px;background:rgba(238,244,255,0.04);border-radius:8px;text-align:center;">
+        <div style="color:var(--muted);font-size:0.68rem;">GERAÇÃO</div>
+        <div style="color:var(--ice);font-weight:700;">${fmt(gen)} kWh/mês</div>
+      </div>
+      <div style="padding:8px;background:rgba(238,244,255,0.04);border-radius:8px;text-align:center;">
+        <div style="color:var(--muted);font-size:0.68rem;">ECONOMIA</div>
+        <div style="color:var(--green);font-weight:700;">R$ ${fmt(savYear)}/ano</div>
+      </div>
+      <div style="padding:8px;background:rgba(238,244,255,0.04);border-radius:8px;text-align:center;">
+        <div style="color:var(--muted);font-size:0.68rem;">INVESTIMENTO</div>
+        <div style="color:var(--gold);font-weight:700;">R$ ${fmt(invest)}</div>
+      </div>
+      <div style="padding:8px;background:rgba(238,244,255,0.04);border-radius:8px;text-align:center;">
+        <div style="color:var(--muted);font-size:0.68rem;">PAYBACK</div>
+        <div style="color:var(--ice);font-weight:700;">${payback.toFixed(1)} anos</div>
+      </div>
+    </div>
+    <div style="margin-top:8px;font-size:0.72rem;color:var(--muted);text-align:center;">Área: ${totalArea.toFixed(1)}m² | Útil: ${usableArea.toFixed(1)}m² | Painel: ${pw}×${ph}m</div>
+  `;
+}
+
+// ══════════════════════════════════════
+// MODE SWITCH
+// ══════════════════════════════════════
 function switchMode(mode) {
   document.querySelectorAll('.mode-tab').forEach((t, i) => {
     t.classList.toggle('active',
@@ -1419,19 +2288,15 @@ function switchMode(mode) {
       (mode === 'photo' && i === 2)
     );
   });
-  // Map visible for both 'map' and 'draw' modes
-  const showMap = (mode === 'map' || mode === 'draw');
-  document.getElementById('mapMode').style.display = showMap ? 'block' : 'none';
+
+  document.getElementById('mapMode').style.display = mode === 'map' ? 'block' : 'none';
+  document.getElementById('drawMode').style.display = mode === 'draw' ? 'block' : 'none';
   document.getElementById('photoMode').classList.toggle('active', mode === 'photo');
-  if (showMap) {
-    map.invalidateSize();
-    if (mode === 'draw') {
-      // Auto-activate the polygon draw tool
-      setTimeout(function() {
-        try { new L.Draw.Polygon(map, drawControl.options.draw.polygon).enable(); } catch(e) {}
-      }, 300);
-      setStep(1);
-    }
+
+  if (mode === 'map') { map.invalidateSize(); }
+  if (mode === 'draw') {
+    drawInit();
+    setTimeout(drawResize, 100);
   }
 }
 
