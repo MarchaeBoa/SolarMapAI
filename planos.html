@@ -215,14 +215,21 @@ if (urlParams.get('blocked') === '1') {
   document.getElementById('planAlert').classList.add('visible');
 }
 
-// Check if already pro → redirect to dashboard
+// If already pro/admin, show a "go to dashboard" button instead of redirecting
 (async function() {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       const { data: profile } = await supabase.from('profiles').select('plan, role').eq('id', user.id).single();
-      if (profile && (profile.plan === 'pro' || profile.role === 'admin')) {
-        window.location.href = 'dashboard.html';
+      const isAdmin = (profile && profile.role === 'admin') || user.email === 'oescolhidoneo9@gmail.com';
+      if (profile && (profile.plan === 'pro' || isAdmin)) {
+        // Show banner instead of redirect
+        const btn = document.getElementById('btnAssinar');
+        if (btn) {
+          btn.textContent = '✅ Você já tem acesso — Ir para o Dashboard';
+          btn.onclick = function() { window.location.href = 'dashboard.html'; };
+          btn.style.background = 'linear-gradient(135deg, #5AFAC8, #1FD8A4)';
+        }
       }
     }
   } catch(e) {}
