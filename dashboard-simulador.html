@@ -501,6 +501,7 @@ select option {
 <!-- MODE TABS -->
 <div class="mode-tabs">
   <button class="mode-tab active" onclick="switchMode('map')">🗺️ Mapa Satélite</button>
+  <button class="mode-tab" onclick="switchMode('draw')">📐 Desenhar Telhado</button>
   <button class="mode-tab" onclick="switchMode('photo')">📷 Upload Foto</button>
 </div>
 
@@ -1412,11 +1413,26 @@ async function saveManualSim() {
 // ══════════════════════════════════════
 function switchMode(mode) {
   document.querySelectorAll('.mode-tab').forEach((t, i) => {
-    t.classList.toggle('active', (mode === 'map' && i === 0) || (mode === 'photo' && i === 1));
+    t.classList.toggle('active',
+      (mode === 'map' && i === 0) ||
+      (mode === 'draw' && i === 1) ||
+      (mode === 'photo' && i === 2)
+    );
   });
-  document.getElementById('mapMode').style.display = mode === 'map' ? 'block' : 'none';
+  // Map visible for both 'map' and 'draw' modes
+  const showMap = (mode === 'map' || mode === 'draw');
+  document.getElementById('mapMode').style.display = showMap ? 'block' : 'none';
   document.getElementById('photoMode').classList.toggle('active', mode === 'photo');
-  if (mode === 'map') { map.invalidateSize(); }
+  if (showMap) {
+    map.invalidateSize();
+    if (mode === 'draw') {
+      // Auto-activate the polygon draw tool
+      setTimeout(function() {
+        try { new L.Draw.Polygon(map, drawControl.options.draw.polygon).enable(); } catch(e) {}
+      }, 300);
+      setStep(1);
+    }
+  }
 }
 
 // ══════════════════════════════════════
