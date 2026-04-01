@@ -620,27 +620,11 @@ select option {
 .draw-bottom-btn:hover { background: rgba(212,168,67,0.15); border-color: rgba(212,168,67,0.3); }
 .draw-zoom-label { font-size: 0.78rem; color: var(--gold); font-weight: 600; min-width: 40px; }
 
-/* Panel Placement Controls */
-.draw-panel-controls {
-  position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%); z-index: 110;
-  display: flex; gap: 10px; align-items: center;
-  background: rgba(6,12,20,0.92); backdrop-filter: blur(16px);
-  border: 1px solid rgba(31,216,164,0.25); border-radius: 14px;
-  padding: 10px 18px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+/* Draw mode panel placer (same as map mode panel-placer) */
+.draw-placer {
+  position: absolute; top: 80px; left: 76px; z-index: 110;
+  display: flex; flex-direction: column; gap: 8px;
 }
-.dpc-btn {
-  padding: 8px 16px; border: 1px solid rgba(238,244,255,0.1);
-  border-radius: 10px; background: rgba(238,244,255,0.04);
-  color: var(--ice); font-size: 0.82rem; font-weight: 600;
-  font-family: inherit; cursor: pointer; transition: 0.2s;
-}
-.dpc-btn:hover { background: rgba(31,216,164,0.15); }
-.dpc-add.active { background: rgba(31,216,164,0.2); border-color: var(--green); color: var(--green); }
-.dpc-clear { color: #ff6b6b; border-color: rgba(255,107,107,0.2); }
-.dpc-clear:hover { background: rgba(255,107,107,0.15); }
-.dpc-size { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 0.78rem; }
-.dpc-size input { width: 80px; accent-color: var(--green); }
-.dpc-count { color: var(--ice); font-size: 0.82rem; }
 
 /* Draw mode solar panel (HTML overlay) */
 .draw-solar-panel {
@@ -738,15 +722,34 @@ select option {
     <div id="drawPanelsOverlay" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:10;"></div>
   </div>
 
-  <!-- Panel Placement Controls (like photo mode) -->
-  <div class="draw-panel-controls" id="drawPanelControls" style="display:none;">
-    <button class="dpc-btn dpc-add active" onclick="drawEnablePanelMode()">☀️ Adicionar Painel</button>
-    <div class="dpc-size">
-      <span>Tamanho:</span>
-      <input type="range" id="drawPanelSizeSlider" min="30" max="120" value="60" oninput="drawPanelSize=parseInt(this.value)">
+  <!-- Panel Placer (same style as map mode) -->
+  <div class="draw-placer" id="drawPlacer" style="display:none;">
+    <button class="pp-btn" onclick="drawTogglePanelPlace()" id="dpBtn">
+      <span class="pp-icon">☀️</span>
+      <span class="pp-text">Adicionar Painel</span>
+    </button>
+    <div class="pp-info" id="dpInfo" style="display:none;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <span style="font-size:1.4rem;font-weight:800;color:var(--green);" id="drawPanelCount">0</span>
+        <span style="font-size:0.75rem;color:var(--muted);">painéis</span>
+      </div>
+      <div style="margin-bottom:8px;">
+        <label style="font-size:0.7rem;color:var(--muted);display:block;margin-bottom:3px;">Rotação</label>
+        <input type="range" id="dpRotation" min="0" max="360" value="0" style="width:100%;accent-color:var(--gold);" oninput="drawPanelRotation=parseInt(this.value);document.getElementById('dpRotVal').textContent=this.value+'°';">
+        <div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--muted);"><span>0°</span><span id="dpRotVal">0°</span><span>360°</span></div>
+      </div>
+      <div style="margin-bottom:8px;">
+        <label style="font-size:0.7rem;color:var(--muted);display:block;margin-bottom:3px;">Tamanho</label>
+        <input type="range" id="dpSize" min="30" max="120" value="60" style="width:100%;accent-color:var(--gold);" oninput="drawPanelSize=parseInt(this.value)">
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:10px;">
+        <button class="pp-mini-btn pp-undo" onclick="drawUndoLastPanel()" title="Desfazer último">↩</button>
+        <button class="pp-mini-btn pp-clear" onclick="drawClearPanels()" title="Limpar todos">🗑️</button>
+      </div>
+      <button onclick="drawSimulate()" style="width:100%;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--gold-light),var(--gold));color:var(--midnight);font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.9rem;transition:var(--transition);box-shadow:0 4px 16px rgba(212,168,67,0.3);" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform=''">
+        ✅ Simular orçamento
+      </button>
     </div>
-    <span class="dpc-count">Painéis: <strong id="drawPanelCount">0</strong></span>
-    <button class="dpc-btn dpc-clear" onclick="drawClearPanels()">Limpar painéis</button>
   </div>
 
   <!-- Right Panel -->
@@ -2293,17 +2296,31 @@ function drawUpdateInfo() {
 // ── PANEL PLACEMENT ON DRAW MODE ──
 let drawPanelMode = false;
 let drawPanelSize = 60;
+let drawPanelRotation = 0;
 let drawPlacedPanels = [];
 
-function drawEnablePanelMode() {
+function drawTogglePanelPlace() {
   drawPanelMode = !drawPanelMode;
-  const btn = document.querySelector('.dpc-add');
+  const btn = document.getElementById('dpBtn');
+  const info = document.getElementById('dpInfo');
   btn.classList.toggle('active', drawPanelMode);
+  info.style.display = drawPanelMode ? 'block' : 'none';
   document.getElementById('drawCanvasArea').style.cursor = drawPanelMode ? 'crosshair' : 'default';
 }
 
 function drawTogglePanelControls(show) {
-  document.getElementById('drawPanelControls').style.display = show ? 'flex' : 'none';
+  const placer = document.getElementById('drawPlacer');
+  placer.style.display = show ? 'flex' : 'none';
+  if (show && !drawPanelMode) {
+    drawTogglePanelPlace();
+  }
+}
+
+function drawUndoLastPanel() {
+  if (drawPlacedPanels.length === 0) return;
+  const last = drawPlacedPanels.pop();
+  last.remove();
+  drawUpdatePanelCount();
 }
 
 // Listen for clicks on canvas area to place panels
@@ -2327,8 +2344,9 @@ function drawCreatePanel(x, y) {
 
   const panel = document.createElement('div');
   panel.className = 'draw-solar-panel';
-  panel.style.cssText = `left:${x}px;top:${y}px;width:${w}px;height:${h}px;transform:rotate(0deg);`;
-  panel.dataset.rotation = '0';
+  const rot = drawPanelRotation || 0;
+  panel.style.cssText = `left:${x}px;top:${y}px;width:${w}px;height:${h}px;transform:rotate(${rot}deg);`;
+  panel.dataset.rotation = rot;
 
   panel.innerHTML = `
     <div class="dp-face">
@@ -2338,7 +2356,7 @@ function drawCreatePanel(x, y) {
     </div>
     <button class="dp-del" onclick="drawRemovePanel(this)">✕</button>
     <div class="dp-rotate">↻</div>
-    <div class="dp-angle">0°</div>
+    <div class="dp-angle">${rot}°</div>
   `;
 
   // Drag to move
