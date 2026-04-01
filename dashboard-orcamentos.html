@@ -7,6 +7,74 @@
 <link rel="stylesheet" href="css/shared.css">
 <link rel="stylesheet" href="css/dashboard.css">
 <link rel="stylesheet" href="css/solzinho.css">
+<style>
+/* ── Modal Overlay ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal-close {
+  position: absolute;
+  top: 14px; right: 18px;
+  background: none; border: none;
+  color: var(--muted); font-size: 1.8rem;
+  cursor: pointer; line-height: 1;
+  transition: color 0.2s;
+  z-index: 10;
+}
+.modal-close:hover { color: #ff6b6b; }
+
+/* ── Budget Modal Styles ── */
+.bdg-modal-body { max-width:780px;width:95%;max-height:92vh;overflow-y:auto;margin:auto;position:relative;padding:32px; }
+.bdg-section { margin-bottom:28px; }
+.bdg-section-title { font-size:1rem;font-weight:700;color:var(--gold);margin-bottom:14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(212,168,67,0.2);padding-bottom:8px; }
+.bdg-row { display:grid;gap:12px;margin-bottom:12px; }
+.bdg-row-2 { grid-template-columns:1fr 1fr; }
+.bdg-row-3 { grid-template-columns:1fr 1fr 1fr; }
+.bdg-row-4 { grid-template-columns:1fr 1fr 1fr 1fr; }
+@media(max-width:640px) { .bdg-row-2,.bdg-row-3,.bdg-row-4 { grid-template-columns:1fr; } }
+.bdg-label { font-size:0.78rem;font-weight:600;color:var(--ice);margin-bottom:4px;display:block; }
+.bdg-input { width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(238,244,255,0.12);background:rgba(6,12,20,0.6);color:var(--ice);font-size:0.85rem;font-family:inherit; }
+.bdg-input:focus { border-color:var(--gold);outline:none;box-shadow:0 0 0 2px rgba(212,168,67,0.15); }
+.bdg-input::placeholder { color:rgba(238,244,255,0.3); }
+select.bdg-input { cursor:pointer; }
+textarea.bdg-input { resize:vertical;min-height:70px; }
+
+/* Equipment table */
+.eq-table { width:100%;border-collapse:collapse;margin-top:8px; }
+.eq-table th { text-align:left;font-size:0.72rem;font-weight:600;color:var(--muted);padding:6px 8px;border-bottom:1px solid rgba(238,244,255,0.08); }
+.eq-table td { padding:6px 8px;font-size:0.82rem;vertical-align:middle; }
+.eq-table .eq-input { width:100%;padding:7px 10px;border-radius:8px;border:1px solid rgba(238,244,255,0.1);background:rgba(6,12,20,0.5);color:var(--ice);font-size:0.82rem;font-family:inherit; }
+.eq-table .eq-input:focus { border-color:var(--gold);outline:none; }
+.eq-table .eq-total { color:var(--green);font-weight:600; }
+.eq-remove { background:none;border:none;color:#ff6b6b;cursor:pointer;font-size:1rem;padding:4px; }
+.eq-remove:hover { color:#ff4444; }
+.eq-add-btn { margin-top:8px;background:rgba(212,168,67,0.1);border:1px dashed rgba(212,168,67,0.3);color:var(--gold);padding:8px 16px;border-radius:10px;cursor:pointer;font-size:0.82rem;font-family:inherit;width:100%;transition:0.2s; }
+.eq-add-btn:hover { background:rgba(212,168,67,0.2); }
+
+/* Summary cards */
+.bdg-summary { display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:12px; }
+.bdg-sum-card { background:rgba(6,12,20,0.5);border:1px solid rgba(238,244,255,0.08);border-radius:12px;padding:14px;text-align:center; }
+.bdg-sum-card .sum-label { font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px; }
+.bdg-sum-card .sum-value { font-size:1.1rem;font-weight:700;color:var(--ice); }
+.bdg-sum-card .sum-value.green { color:var(--green); }
+.bdg-sum-card .sum-value.gold { color:var(--gold); }
+
+/* Total bar */
+.bdg-total-bar { display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,rgba(212,168,67,0.15),rgba(212,168,67,0.05));border:1px solid rgba(212,168,67,0.3);border-radius:14px;padding:18px 24px;margin-top:16px; }
+.bdg-total-label { font-size:1rem;font-weight:700;color:var(--gold); }
+.bdg-total-value { font-size:1.4rem;font-weight:800;color:var(--green); }
+
+/* Info badges */
+.bdg-info { display:inline-flex;align-items:center;gap:4px;background:rgba(90,250,200,0.1);color:var(--green);font-size:0.75rem;padding:4px 10px;border-radius:20px;font-weight:600; }
+</style>
 </head>
 <body>
 
@@ -94,54 +162,235 @@
   </main>
 </div>
 
-<!-- Budget Modal -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- BUDGET MODAL — Full Solar Budget Builder                  -->
+<!-- ══════════════════════════════════════════════════════════ -->
 <div class="modal-overlay" id="budgetModal" style="display:none">
-  <div class="glass-card" style="max-width:560px;width:90%;max-height:90vh;overflow-y:auto;margin:auto;position:relative;">
+  <div class="glass-card bdg-modal-body">
     <button class="modal-close" onclick="closeBudgetModal()">&times;</button>
-    <h2 style="margin-bottom:24px;" id="budgetModalTitle">Novo Orçamento</h2>
+    <h2 style="margin-bottom:4px;" id="budgetModalTitle">Novo Orçamento Solar</h2>
+    <p style="color:var(--muted);font-size:0.82rem;margin-bottom:24px;">Preencha os dados para gerar o orçamento completo</p>
 
     <input type="hidden" id="bdgEditId">
 
-    <div class="form-group">
-      <label class="form-label">Nome do cliente</label>
-      <input type="text" class="form-input" id="bdgClientName" placeholder="Ex: João Silva">
+    <!-- ── 1. DADOS DO CLIENTE ── -->
+    <div class="bdg-section">
+      <div class="bdg-section-title">👤 Dados do Cliente</div>
+      <div class="bdg-row bdg-row-2">
+        <div>
+          <label class="bdg-label">Nome do cliente *</label>
+          <input type="text" class="bdg-input" id="bdgClientName" placeholder="Ex: João Silva">
+        </div>
+        <div>
+          <label class="bdg-label">Email</label>
+          <input type="email" class="bdg-input" id="bdgClientEmail" placeholder="email@exemplo.com">
+        </div>
+      </div>
+      <div class="bdg-row bdg-row-3">
+        <div>
+          <label class="bdg-label">Telefone</label>
+          <input type="tel" class="bdg-input" id="bdgClientPhone" placeholder="(00) 00000-0000">
+        </div>
+        <div>
+          <label class="bdg-label">Cidade / Endereço</label>
+          <input type="text" class="bdg-input" id="bdgClientAddress" placeholder="Ex: Campo Grande, MS">
+        </div>
+        <div>
+          <label class="bdg-label">Estado</label>
+          <select class="bdg-input" id="bdgClientState" onchange="recalcAll()">
+            <option value="">Selecione</option>
+            <option value="AC">Acre</option><option value="AL">Alagoas</option><option value="AP">Amapá</option>
+            <option value="AM">Amazonas</option><option value="BA">Bahia</option><option value="CE">Ceará</option>
+            <option value="DF">Distrito Federal</option><option value="ES">Espírito Santo</option><option value="GO">Goiás</option>
+            <option value="MA">Maranhão</option><option value="MT">Mato Grosso</option><option value="MS">Mato Grosso do Sul</option>
+            <option value="MG">Minas Gerais</option><option value="PA">Pará</option><option value="PB">Paraíba</option>
+            <option value="PR">Paraná</option><option value="PE">Pernambuco</option><option value="PI">Piauí</option>
+            <option value="RJ">Rio de Janeiro</option><option value="RN">Rio Grande do Norte</option><option value="RS">Rio Grande do Sul</option>
+            <option value="RO">Rondônia</option><option value="RR">Roraima</option><option value="SC">Santa Catarina</option>
+            <option value="SP">São Paulo</option><option value="SE">Sergipe</option><option value="TO">Tocantins</option>
+          </select>
+        </div>
+      </div>
     </div>
 
-    <div class="form-group">
-      <label class="form-label">Email do cliente</label>
-      <input type="email" class="form-input" id="bdgClientEmail" placeholder="email@exemplo.com">
+    <!-- ── 2. ESPECIFICAÇÕES DO SISTEMA ── -->
+    <div class="bdg-section">
+      <div class="bdg-section-title">⚡ Especificações do Sistema</div>
+      <div class="bdg-row bdg-row-3">
+        <div>
+          <label class="bdg-label">Tipo de painel</label>
+          <select class="bdg-input" id="bdgPanelType" onchange="onPanelChange()">
+            <option value="mono-400">Monocristalino 400W — R$ 850</option>
+            <option value="bi-450">Bifacial 450W — R$ 1.100</option>
+            <option value="poly-350">Policristalino 350W — R$ 650</option>
+          </select>
+        </div>
+        <div>
+          <label class="bdg-label">Quantidade de painéis</label>
+          <input type="number" class="bdg-input" id="bdgPanelQty" value="10" min="1" max="500" onchange="onPanelChange()">
+        </div>
+        <div>
+          <label class="bdg-label">Área de telhado (m²)</label>
+          <input type="number" class="bdg-input" id="bdgRoofArea" placeholder="Ex: 40" step="0.1" min="0">
+        </div>
+      </div>
+      <div class="bdg-row bdg-row-3">
+        <div>
+          <label class="bdg-label">Tipo de inversor</label>
+          <select class="bdg-input" id="bdgInverterType" onchange="recalcAll()">
+            <option value="string">String (convencional)</option>
+            <option value="micro">Microinversor</option>
+            <option value="hibrido">Híbrido (com bateria)</option>
+          </select>
+        </div>
+        <div>
+          <label class="bdg-label">Potência do inversor (kW)</label>
+          <input type="number" class="bdg-input" id="bdgInverterPower" placeholder="Auto" step="0.1" min="0" onchange="recalcAll()">
+        </div>
+        <div>
+          <label class="bdg-label">Fase elétrica</label>
+          <select class="bdg-input" id="bdgPhase">
+            <option value="mono">Monofásico (até 10kW)</option>
+            <option value="bi">Bifásico (até 25kW)</option>
+            <option value="tri">Trifásico (acima 25kW)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Auto-calculated info -->
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;">
+        <span class="bdg-info" id="infoKwp">⚡ 0.00 kWp</span>
+        <span class="bdg-info" id="infoGen">🔋 0 kWh/mês</span>
+        <span class="bdg-info" id="infoSave">💰 R$ 0/mês economia</span>
+      </div>
     </div>
 
-    <div class="form-group">
-      <label class="form-label">Projeto vinculado</label>
-      <select class="form-input" id="bdgProjectId">
-        <option value="">— Nenhum projeto —</option>
-      </select>
+    <!-- ── 3. EQUIPAMENTOS ── -->
+    <div class="bdg-section">
+      <div class="bdg-section-title">🔧 Equipamentos</div>
+      <table class="eq-table">
+        <thead>
+          <tr><th style="width:40%">Item</th><th style="width:15%">Qtd</th><th style="width:20%">Valor Unit.</th><th style="width:20%">Subtotal</th><th style="width:5%"></th></tr>
+        </thead>
+        <tbody id="eqTableBody">
+          <!-- Rows generated by JS -->
+        </tbody>
+      </table>
+      <button class="eq-add-btn" onclick="addEquipmentRow()">+ Adicionar item</button>
+      <div style="text-align:right;margin-top:8px;font-size:0.9rem;">
+        <span style="color:var(--muted)">Subtotal Equipamentos:</span>
+        <strong style="color:var(--green);margin-left:8px;" id="eqSubtotal">R$ 0,00</strong>
+      </div>
     </div>
 
-    <div class="form-group">
-      <label class="form-label">Valor total (R$)</label>
-      <input type="number" class="form-input" id="bdgTotalValue" placeholder="0.00" step="0.01" min="0">
+    <!-- ── 4. MÃO DE OBRA ── -->
+    <div class="bdg-section">
+      <div class="bdg-section-title">👷 Mão de Obra e Serviços</div>
+      <table class="eq-table">
+        <thead>
+          <tr><th style="width:55%">Serviço</th><th style="width:20%">Valor (R$)</th><th style="width:20%">Obs</th><th style="width:5%"></th></tr>
+        </thead>
+        <tbody id="laborTableBody">
+          <!-- Rows generated by JS -->
+        </tbody>
+      </table>
+      <button class="eq-add-btn" onclick="addLaborRow()">+ Adicionar serviço</button>
+      <div style="text-align:right;margin-top:8px;font-size:0.9rem;">
+        <span style="color:var(--muted)">Subtotal Mão de Obra:</span>
+        <strong style="color:var(--green);margin-left:8px;" id="laborSubtotal">R$ 0,00</strong>
+      </div>
     </div>
 
-    <div class="form-group">
-      <label class="form-label">Itens / Descrição</label>
-      <textarea class="form-input" id="bdgItems" rows="4" placeholder='Ex: 10x Painéis 550W, 1x Inversor 5kW, Instalação...'></textarea>
+    <!-- ── 5. DESCONTO ── -->
+    <div class="bdg-section">
+      <div class="bdg-section-title">🏷️ Desconto</div>
+      <div class="bdg-row bdg-row-3">
+        <div>
+          <label class="bdg-label">Tipo de desconto</label>
+          <select class="bdg-input" id="bdgDiscountType" onchange="recalcAll()">
+            <option value="none">Sem desconto</option>
+            <option value="percent">Percentual (%)</option>
+            <option value="fixed">Valor fixo (R$)</option>
+          </select>
+        </div>
+        <div>
+          <label class="bdg-label">Valor do desconto</label>
+          <input type="number" class="bdg-input" id="bdgDiscountValue" value="0" min="0" step="0.01" onchange="recalcAll()">
+        </div>
+        <div>
+          <label class="bdg-label">Desconto calculado</label>
+          <input type="text" class="bdg-input" id="bdgDiscountCalc" value="R$ 0,00" readonly style="color:var(--gold);font-weight:600;">
+        </div>
+      </div>
     </div>
 
-    <div class="form-group">
-      <label class="form-label">Status</label>
-      <select class="form-input" id="bdgStatus">
-        <option value="pendente">Pendente</option>
-        <option value="enviado">Enviado</option>
-        <option value="aprovado">Aprovado</option>
-        <option value="recusado">Recusado</option>
-      </select>
+    <!-- ── 6. RESUMO ── -->
+    <div class="bdg-section">
+      <div class="bdg-section-title">📊 Resumo do Investimento</div>
+      <div class="bdg-summary">
+        <div class="bdg-sum-card">
+          <div class="sum-label">Potência total</div>
+          <div class="sum-value gold" id="sumKwp">0.00 kWp</div>
+        </div>
+        <div class="bdg-sum-card">
+          <div class="sum-label">Geração mensal</div>
+          <div class="sum-value" id="sumGen">0 kWh</div>
+        </div>
+        <div class="bdg-sum-card">
+          <div class="sum-label">Economia mensal</div>
+          <div class="sum-value green" id="sumSaveMonth">R$ 0</div>
+        </div>
+        <div class="bdg-sum-card">
+          <div class="sum-label">Economia anual</div>
+          <div class="sum-value green" id="sumSaveYear">R$ 0</div>
+        </div>
+        <div class="bdg-sum-card">
+          <div class="sum-label">Payback estimado</div>
+          <div class="sum-value gold" id="sumPayback">— anos</div>
+        </div>
+        <div class="bdg-sum-card">
+          <div class="sum-label">CO₂ evitado/ano</div>
+          <div class="sum-value green" id="sumCO2">0 ton</div>
+        </div>
+      </div>
+
+      <div class="bdg-total-bar">
+        <span class="bdg-total-label">TOTAL DO INVESTIMENTO</span>
+        <span class="bdg-total-value" id="sumTotal">R$ 0,00</span>
+      </div>
+    </div>
+
+    <!-- ── 7. OBSERVAÇÕES ── -->
+    <div class="bdg-section">
+      <div class="bdg-section-title">📝 Observações</div>
+      <textarea class="bdg-input" id="bdgNotes" rows="4" placeholder="Garantias, condições de pagamento, prazos de instalação, observações técnicas..."></textarea>
+    </div>
+
+    <!-- ── 8. PROJETO & STATUS ── -->
+    <div class="bdg-section">
+      <div class="bdg-section-title">📋 Projeto e Status</div>
+      <div class="bdg-row bdg-row-2">
+        <div>
+          <label class="bdg-label">Projeto vinculado</label>
+          <select class="bdg-input" id="bdgProjectId">
+            <option value="">— Nenhum projeto —</option>
+          </select>
+        </div>
+        <div>
+          <label class="bdg-label">Status</label>
+          <select class="bdg-input" id="bdgStatus">
+            <option value="pendente">Pendente</option>
+            <option value="enviado">Enviado ao cliente</option>
+            <option value="aprovado">Aprovado</option>
+            <option value="recusado">Recusado</option>
+          </select>
+        </div>
+      </div>
     </div>
 
     <div id="bdgAlert" style="margin-bottom:16px;display:none;padding:12px;border-radius:12px;font-size:0.85rem;"></div>
 
-    <button class="btn-primary" style="width:100%" onclick="saveBudget()">Salvar orçamento</button>
+    <button class="btn-primary" style="width:100%;padding:14px;font-size:1rem;" onclick="saveBudget()">💾 Salvar Orçamento</button>
   </div>
 </div>
 
@@ -161,7 +410,209 @@ document.querySelectorAll('.dash-nav-item').forEach(item => {
   item.classList.toggle('active', item.getAttribute('href') === currentPage);
 });
 
-// ── Load Budgets ──
+// ══════════════════════════════════════════════════════════
+// SOLAR DATA — Panel specs, irradiance, tariffs, labor
+// ══════════════════════════════════════════════════════════
+const PANELS = {
+  'mono-400':  { name: 'Painel Monocristalino 400W', watt: 400, w: 1.04, h: 2.10, price: 850 },
+  'bi-450':    { name: 'Painel Bifacial 450W',       watt: 450, w: 1.04, h: 2.10, price: 1100 },
+  'poly-350':  { name: 'Painel Policristalino 350W',  watt: 350, w: 0.99, h: 1.96, price: 650 }
+};
+
+const INVERTER_PRICES = {
+  'string':  { perKwp: 650,  name: 'Inversor String' },
+  'micro':   { perKwp: 1200, name: 'Microinversor' },
+  'hibrido': { perKwp: 1800, name: 'Inversor Híbrido' }
+};
+
+const IRR = { AC:4.6,AL:5.4,AP:4.5,AM:4.4,BA:5.4,CE:5.5,DF:5.1,ES:4.7,GO:5.2,MA:5.3,MT:5.1,MS:5.0,MG:5.0,PA:4.8,PB:5.5,PR:4.4,PE:5.3,PI:5.6,RJ:4.6,RN:5.7,RS:4.2,RO:4.7,RR:4.5,SC:4.3,SP:4.5,SE:5.3,TO:5.2 };
+const TAR = { AC:0.72,AL:0.76,AP:0.70,AM:0.73,BA:0.76,CE:0.74,DF:0.72,ES:0.78,GO:0.73,MA:0.72,MT:0.78,MS:0.76,MG:0.80,PA:0.80,PB:0.73,PR:0.75,PE:0.77,PI:0.70,RJ:0.82,RN:0.74,RS:0.79,RO:0.74,RR:0.72,SC:0.76,SP:0.78,SE:0.75,TO:0.74 };
+
+const LABOR_DEFAULTS = [
+  { name: 'Instalação dos painéis', perKwp: 650 },
+  { name: 'Montagem de estrutura', perKwp: 380 },
+  { name: 'Serviço elétrico (CC/CA)', perKwp: 280 },
+  { name: 'Projeto de engenharia', fixed: 1500 },
+  { name: 'ART / Documentação', fixed: 800 },
+  { name: 'Frete / Transporte', fixed: 500 }
+];
+
+// ══════════════════════════════════════════════════════════
+// EQUIPMENT TABLE — Dynamic rows
+// ══════════════════════════════════════════════════════════
+let equipmentRows = [];
+let laborRows = [];
+let extraEquipId = 100;
+let extraLaborId = 100;
+
+function getDefaultEquipment(panelType, qty) {
+  const p = PANELS[panelType];
+  const kWp = (qty * p.watt) / 1000;
+  const inv = INVERTER_PRICES[document.getElementById('bdgInverterType').value];
+  const invPower = parseFloat(document.getElementById('bdgInverterPower').value) || Math.ceil(kWp * 1.1);
+  const invPrice = Math.round(invPower * inv.perKwp);
+
+  return [
+    { id: 'panels',    name: p.name,                        qty: qty, unitPrice: p.price,            fixed: false },
+    { id: 'inverter',  name: inv.name + ' ' + invPower + 'kW', qty: 1,   unitPrice: invPrice,           fixed: false },
+    { id: 'stringbox', name: 'String Box CC/CA',             qty: 1,   unitPrice: Math.round(kWp * 120), fixed: false },
+    { id: 'cables',    name: 'Cabos solares + Conectores MC4', qty: 1,  unitPrice: Math.round(kWp * 180), fixed: false },
+    { id: 'structure', name: 'Estrutura de fixação (alumínio)', qty: qty, unitPrice: Math.round(85),     fixed: false },
+    { id: 'dps',       name: 'DPS (Proteção contra surtos)',   qty: 2,   unitPrice: 180,                 fixed: false },
+    { id: 'disjuntor', name: 'Disjuntores CC/CA',             qty: 1,   unitPrice: Math.round(kWp * 55), fixed: false },
+    { id: 'aterram',   name: 'Kit aterramento',               qty: 1,   unitPrice: 350,                 fixed: false }
+  ];
+}
+
+function renderEquipmentTable() {
+  const tbody = document.getElementById('eqTableBody');
+  tbody.innerHTML = equipmentRows.map((row, i) => `
+    <tr>
+      <td><input class="eq-input" value="${row.name}" onchange="equipmentRows[${i}].name=this.value"></td>
+      <td><input class="eq-input" type="number" value="${row.qty}" min="0" style="width:70px" onchange="equipmentRows[${i}].qty=parseInt(this.value)||0;recalcAll()"></td>
+      <td><input class="eq-input" type="number" value="${row.unitPrice}" min="0" step="0.01" style="width:110px" onchange="equipmentRows[${i}].unitPrice=parseFloat(this.value)||0;recalcAll()"></td>
+      <td class="eq-total">${formatCurrency(row.qty * row.unitPrice)}</td>
+      <td><button class="eq-remove" onclick="removeEquipRow(${i})">×</button></td>
+    </tr>`).join('');
+  recalcAll();
+}
+
+function addEquipmentRow() {
+  equipmentRows.push({ id: 'extra-' + (extraEquipId++), name: 'Novo item', qty: 1, unitPrice: 0, fixed: false });
+  renderEquipmentTable();
+}
+
+function removeEquipRow(i) {
+  equipmentRows.splice(i, 1);
+  renderEquipmentTable();
+}
+
+// ══════════════════════════════════════════════════════════
+// LABOR TABLE — Dynamic rows
+// ══════════════════════════════════════════════════════════
+function getDefaultLabor(kWp) {
+  return LABOR_DEFAULTS.map((l, i) => ({
+    id: 'labor-' + i,
+    name: l.name,
+    value: l.fixed ? l.fixed : Math.round(kWp * l.perKwp),
+    obs: l.fixed ? 'Valor fixo' : (l.perKwp + '/kWp')
+  }));
+}
+
+function renderLaborTable() {
+  const tbody = document.getElementById('laborTableBody');
+  tbody.innerHTML = laborRows.map((row, i) => `
+    <tr>
+      <td><input class="eq-input" value="${row.name}" onchange="laborRows[${i}].name=this.value"></td>
+      <td><input class="eq-input" type="number" value="${row.value}" min="0" step="0.01" style="width:130px" onchange="laborRows[${i}].value=parseFloat(this.value)||0;recalcAll()"></td>
+      <td><input class="eq-input" value="${row.obs || ''}" placeholder="—" style="width:120px" onchange="laborRows[${i}].obs=this.value"></td>
+      <td><button class="eq-remove" onclick="removeLaborRow(${i})">×</button></td>
+    </tr>`).join('');
+  recalcAll();
+}
+
+function addLaborRow() {
+  laborRows.push({ id: 'extra-' + (extraLaborId++), name: 'Novo serviço', value: 0, obs: '' });
+  renderLaborTable();
+}
+
+function removeLaborRow(i) {
+  laborRows.splice(i, 1);
+  renderLaborTable();
+}
+
+// ══════════════════════════════════════════════════════════
+// CALCULATIONS
+// ══════════════════════════════════════════════════════════
+function recalcAll() {
+  const panelType = document.getElementById('bdgPanelType').value;
+  const qty = parseInt(document.getElementById('bdgPanelQty').value) || 0;
+  const state = document.getElementById('bdgClientState').value;
+  const p = PANELS[panelType];
+
+  // kWp
+  const kWp = (qty * p.watt) / 1000;
+
+  // Irradiance & tariff
+  const irr = IRR[state] || 4.8;
+  const tar = TAR[state] || 0.76;
+
+  // Monthly generation: kWp × irradiance × 30 × 0.78 (performance ratio)
+  const genMonth = Math.round(kWp * irr * 30 * 0.78);
+  const genYear = genMonth * 12;
+
+  // Savings
+  const saveMonth = genMonth * tar;
+  const saveYear = saveMonth * 12;
+
+  // Equipment subtotal
+  const eqTotal = equipmentRows.reduce((s, r) => s + (r.qty * r.unitPrice), 0);
+
+  // Labor subtotal
+  const labTotal = laborRows.reduce((s, r) => s + r.value, 0);
+
+  // Discount
+  const discType = document.getElementById('bdgDiscountType').value;
+  const discVal = parseFloat(document.getElementById('bdgDiscountValue').value) || 0;
+  let discount = 0;
+  if (discType === 'percent') discount = (eqTotal + labTotal) * (discVal / 100);
+  else if (discType === 'fixed') discount = discVal;
+
+  // Total
+  const total = eqTotal + labTotal - discount;
+
+  // Payback
+  const payback = saveYear > 0 ? (total / saveYear) : 0;
+
+  // CO2
+  const co2 = (genYear * 0.075) / 1000;
+
+  // Update UI
+  document.getElementById('infoKwp').textContent = '⚡ ' + kWp.toFixed(2) + ' kWp';
+  document.getElementById('infoGen').textContent = '🔋 ' + genMonth.toLocaleString('pt-BR') + ' kWh/mês';
+  document.getElementById('infoSave').textContent = '💰 ' + formatCurrency(saveMonth) + '/mês economia';
+
+  document.getElementById('eqSubtotal').textContent = formatCurrency(eqTotal);
+  document.getElementById('laborSubtotal').textContent = formatCurrency(labTotal);
+  document.getElementById('bdgDiscountCalc').value = '- ' + formatCurrency(discount);
+
+  document.getElementById('sumKwp').textContent = kWp.toFixed(2) + ' kWp';
+  document.getElementById('sumGen').textContent = genMonth.toLocaleString('pt-BR') + ' kWh';
+  document.getElementById('sumSaveMonth').textContent = formatCurrency(saveMonth);
+  document.getElementById('sumSaveYear').textContent = formatCurrency(saveYear);
+  document.getElementById('sumPayback').textContent = payback > 0 ? payback.toFixed(1) + ' anos' : '—';
+  document.getElementById('sumCO2').textContent = co2.toFixed(2) + ' ton';
+  document.getElementById('sumTotal').textContent = formatCurrency(total);
+}
+
+function onPanelChange() {
+  const panelType = document.getElementById('bdgPanelType').value;
+  const qty = parseInt(document.getElementById('bdgPanelQty').value) || 10;
+  const kWp = (qty * PANELS[panelType].watt) / 1000;
+
+  // Auto-set inverter power
+  const invPowerField = document.getElementById('bdgInverterPower');
+  if (!invPowerField.dataset.manual) {
+    invPowerField.value = Math.ceil(kWp * 1.1);
+  }
+
+  // Auto-set phase
+  if (kWp <= 10) document.getElementById('bdgPhase').value = 'mono';
+  else if (kWp <= 25) document.getElementById('bdgPhase').value = 'bi';
+  else document.getElementById('bdgPhase').value = 'tri';
+
+  // Regenerate equipment with new panel data
+  equipmentRows = getDefaultEquipment(panelType, qty);
+  renderEquipmentTable();
+
+  // Regenerate labor
+  laborRows = getDefaultLabor(kWp);
+  renderLaborTable();
+}
+
+// ══════════════════════════════════════════════════════════
+// LOAD BUDGETS TABLE
+// ══════════════════════════════════════════════════════════
 async function loadBudgets() {
   try {
     const budgets = await getBudgets();
@@ -190,8 +641,7 @@ async function loadBudgets() {
         <thead>
           <tr>
             <th>Cliente</th>
-            <th>Email</th>
-            <th>Projeto Vinculado</th>
+            <th>Potência</th>
             <th>Valor Total</th>
             <th>Status</th>
             <th>Data</th>
@@ -199,19 +649,22 @@ async function loadBudgets() {
           </tr>
         </thead>
         <tbody>
-          ${budgets.map(b => `
+          ${budgets.map(b => {
+            const details = (typeof b.items === 'object' && b.items !== null) ? b.items : {};
+            const kwp = details.systemSpecs ? details.systemSpecs.kWp : '—';
+            return `
             <tr>
-              <td><strong>${b.client_name || '—'}</strong></td>
-              <td>${b.client_email || '—'}</td>
-              <td>${b.projects?.name || '—'}</td>
-              <td style="color:var(--green)">${formatCurrency(b.total_value || 0)}</td>
+              <td><strong>${b.client_name || '—'}</strong><br><span style="font-size:0.75rem;color:var(--muted)">${b.client_email || ''}</span></td>
+              <td><span class="bdg-info">${typeof kwp === 'number' ? kwp.toFixed(2) + ' kWp' : kwp}</span></td>
+              <td style="color:var(--green);font-weight:600;">${formatCurrency(b.total_value || 0)}</td>
               <td><span class="badge ${statusMap[b.status] || 'badge-muted'}">${b.status}</span></td>
               <td style="color:var(--muted)">${formatDate(b.created_at)}</td>
               <td>
-                <button class="btn-ghost" style="padding:4px 10px;font-size:0.75rem;margin-right:4px;" onclick="editBdg('${b.id}')">✏️ Editar</button>
+                <button class="btn-ghost" style="padding:4px 10px;font-size:0.75rem;margin-right:4px;" onclick="editBdg('${b.id}')">✏️</button>
                 <button class="btn-ghost" style="padding:4px 10px;font-size:0.75rem;color:#ff6b6b;" onclick="deleteBdg('${b.id}')">🗑️</button>
               </td>
-            </tr>`).join('')}
+            </tr>`;
+          }).join('')}
         </tbody>
       </table>`;
   } catch (e) {
@@ -219,7 +672,9 @@ async function loadBudgets() {
   }
 }
 
-// ── Open Modal ──
+// ══════════════════════════════════════════════════════════
+// OPEN / CLOSE MODAL
+// ══════════════════════════════════════════════════════════
 async function openBudgetModal(budget) {
   document.getElementById('budgetModal').style.display = 'flex';
   document.getElementById('bdgAlert').style.display = 'none';
@@ -229,31 +684,57 @@ async function openBudgetModal(budget) {
     const projects = await getProjects();
     const sel = document.getElementById('bdgProjectId');
     sel.innerHTML = '<option value="">— Nenhum projeto —</option>';
-    projects.forEach(p => {
-      sel.innerHTML += `<option value="${p.id}">${p.name}</option>`;
-    });
-  } catch (e) {
-    console.log('Erro ao carregar projetos:', e.message);
-  }
+    projects.forEach(p => { sel.innerHTML += '<option value="' + p.id + '">' + p.name + '</option>'; });
+  } catch (e) { /* no projects */ }
 
-  if (budget) {
-    document.getElementById('budgetModalTitle').textContent = 'Editar Orçamento';
+  if (budget && budget.items && typeof budget.items === 'object') {
+    // EDIT MODE — Restore all data from JSONB
+    const d = budget.items;
+    document.getElementById('budgetModalTitle').textContent = 'Editar Orçamento Solar';
     document.getElementById('bdgEditId').value = budget.id;
     document.getElementById('bdgClientName').value = budget.client_name || '';
     document.getElementById('bdgClientEmail').value = budget.client_email || '';
+    document.getElementById('bdgClientPhone').value = d.clientPhone || '';
+    document.getElementById('bdgClientAddress').value = d.clientAddress || '';
+    document.getElementById('bdgClientState').value = d.clientState || '';
+    document.getElementById('bdgPanelType').value = d.systemSpecs?.panelType || 'mono-400';
+    document.getElementById('bdgPanelQty').value = d.systemSpecs?.panelQty || 10;
+    document.getElementById('bdgInverterType').value = d.systemSpecs?.inverterType || 'string';
+    document.getElementById('bdgInverterPower').value = d.systemSpecs?.inverterPower || '';
+    document.getElementById('bdgPhase').value = d.systemSpecs?.phase || 'mono';
+    document.getElementById('bdgRoofArea').value = d.systemSpecs?.roofArea || '';
+    document.getElementById('bdgDiscountType').value = d.discountType || 'none';
+    document.getElementById('bdgDiscountValue').value = d.discountValue || 0;
+    document.getElementById('bdgNotes').value = d.notes || '';
     document.getElementById('bdgProjectId').value = budget.project_id || '';
-    document.getElementById('bdgTotalValue').value = budget.total_value || '';
-    document.getElementById('bdgItems').value = budget.items || '';
     document.getElementById('bdgStatus').value = budget.status || 'pendente';
+
+    equipmentRows = d.equipmentItems || getDefaultEquipment(d.systemSpecs?.panelType || 'mono-400', d.systemSpecs?.panelQty || 10);
+    laborRows = d.laborItems || getDefaultLabor((d.systemSpecs?.panelQty || 10) * PANELS[d.systemSpecs?.panelType || 'mono-400'].watt / 1000);
+    renderEquipmentTable();
+    renderLaborTable();
   } else {
-    document.getElementById('budgetModalTitle').textContent = 'Novo Orçamento';
+    // CREATE MODE — Fresh form
+    document.getElementById('budgetModalTitle').textContent = 'Novo Orçamento Solar';
     document.getElementById('bdgEditId').value = '';
     document.getElementById('bdgClientName').value = '';
     document.getElementById('bdgClientEmail').value = '';
+    document.getElementById('bdgClientPhone').value = '';
+    document.getElementById('bdgClientAddress').value = '';
+    document.getElementById('bdgClientState').value = '';
+    document.getElementById('bdgPanelType').value = 'mono-400';
+    document.getElementById('bdgPanelQty').value = '10';
+    document.getElementById('bdgInverterType').value = 'string';
+    document.getElementById('bdgInverterPower').value = '';
+    document.getElementById('bdgPhase').value = 'mono';
+    document.getElementById('bdgRoofArea').value = '';
+    document.getElementById('bdgDiscountType').value = 'none';
+    document.getElementById('bdgDiscountValue').value = '0';
+    document.getElementById('bdgNotes').value = '';
     document.getElementById('bdgProjectId').value = '';
-    document.getElementById('bdgTotalValue').value = '';
-    document.getElementById('bdgItems').value = '';
     document.getElementById('bdgStatus').value = 'pendente';
+
+    onPanelChange(); // Generates default equipment & labor
   }
 }
 
@@ -266,53 +747,100 @@ document.getElementById('budgetModal').addEventListener('click', function(e) {
   if (e.target === this) closeBudgetModal();
 });
 
-// ── Save Budget ──
+// ══════════════════════════════════════════════════════════
+// SAVE BUDGET
+// ══════════════════════════════════════════════════════════
 async function saveBudget() {
-  const alert = document.getElementById('bdgAlert');
+  const alertEl = document.getElementById('bdgAlert');
   const clientName = document.getElementById('bdgClientName').value.trim();
   const clientEmail = document.getElementById('bdgClientEmail').value.trim();
-  const projectId = document.getElementById('bdgProjectId').value;
-  const totalValue = parseFloat(document.getElementById('bdgTotalValue').value) || 0;
-  const items = document.getElementById('bdgItems').value.trim();
-  const status = document.getElementById('bdgStatus').value;
   const editId = document.getElementById('bdgEditId').value;
 
   if (!clientName) {
-    alert.style.display = 'block';
-    alert.style.background = 'rgba(255,107,107,0.15)';
-    alert.style.color = '#ff6b6b';
-    alert.textContent = 'Informe o nome do cliente.';
+    alertEl.style.display = 'block';
+    alertEl.style.background = 'rgba(255,107,107,0.15)';
+    alertEl.style.color = '#ff6b6b';
+    alertEl.textContent = 'Informe o nome do cliente.';
     return;
   }
+
+  // Gather all data
+  const panelType = document.getElementById('bdgPanelType').value;
+  const panelQty = parseInt(document.getElementById('bdgPanelQty').value) || 0;
+  const kWp = (panelQty * PANELS[panelType].watt) / 1000;
+  const state = document.getElementById('bdgClientState').value;
+  const irr = IRR[state] || 4.8;
+  const tar = TAR[state] || 0.76;
+  const genMonth = Math.round(kWp * irr * 30 * 0.78);
+  const saveMonth = genMonth * tar;
+
+  const eqTotal = equipmentRows.reduce((s, r) => s + (r.qty * r.unitPrice), 0);
+  const labTotal = laborRows.reduce((s, r) => s + r.value, 0);
+
+  const discType = document.getElementById('bdgDiscountType').value;
+  const discVal = parseFloat(document.getElementById('bdgDiscountValue').value) || 0;
+  let discount = 0;
+  if (discType === 'percent') discount = (eqTotal + labTotal) * (discVal / 100);
+  else if (discType === 'fixed') discount = discVal;
+
+  const totalValue = eqTotal + labTotal - discount;
+
+  // Build JSONB payload with ALL details
+  const itemsPayload = {
+    clientPhone: document.getElementById('bdgClientPhone').value.trim(),
+    clientAddress: document.getElementById('bdgClientAddress').value.trim(),
+    clientState: state,
+    systemSpecs: {
+      panelType, panelQty, kWp,
+      inverterType: document.getElementById('bdgInverterType').value,
+      inverterPower: parseFloat(document.getElementById('bdgInverterPower').value) || Math.ceil(kWp * 1.1),
+      phase: document.getElementById('bdgPhase').value,
+      roofArea: parseFloat(document.getElementById('bdgRoofArea').value) || null
+    },
+    equipmentItems: equipmentRows,
+    laborItems: laborRows,
+    discountType: discType,
+    discountValue: discVal,
+    discountCalc: discount,
+    calculations: {
+      eqTotal, labTotal, discount, totalValue,
+      genMonth, genYear: genMonth * 12,
+      saveMonth, saveYear: saveMonth * 12,
+      payback: saveMonth * 12 > 0 ? totalValue / (saveMonth * 12) : 0,
+      co2: (genMonth * 12 * 0.075) / 1000,
+      irradiance: irr, tariff: tar
+    },
+    notes: document.getElementById('bdgNotes').value.trim()
+  };
 
   try {
     if (editId) {
       await updateBudget(editId, {
         client_name: clientName,
         client_email: clientEmail,
-        project_id: projectId || null,
+        project_id: document.getElementById('bdgProjectId').value || null,
         total_value: totalValue,
-        items: items,
-        status: status
+        items: itemsPayload,
+        status: document.getElementById('bdgStatus').value
       });
     } else {
       await createBudget({
         clientName,
         clientEmail,
-        projectId: projectId || null,
+        projectId: document.getElementById('bdgProjectId').value || null,
         totalValue,
-        items,
-        status
+        items: itemsPayload,
+        status: document.getElementById('bdgStatus').value
       });
     }
 
     closeBudgetModal();
     loadBudgets();
   } catch (e) {
-    alert.style.display = 'block';
-    alert.style.background = 'rgba(255,107,107,0.15)';
-    alert.style.color = '#ff6b6b';
-    alert.textContent = 'Erro: ' + e.message;
+    alertEl.style.display = 'block';
+    alertEl.style.background = 'rgba(255,107,107,0.15)';
+    alertEl.style.color = '#ff6b6b';
+    alertEl.textContent = 'Erro: ' + e.message;
   }
 }
 
@@ -322,9 +850,7 @@ async function editBdg(id) {
     const budgets = await getBudgets();
     const budget = budgets.find(b => b.id === id);
     if (budget) openBudgetModal(budget);
-  } catch (e) {
-    console.error('Erro ao editar:', e.message);
-  }
+  } catch (e) { console.error('Erro ao editar:', e.message); }
 }
 
 // ── Delete Budget ──
@@ -333,9 +859,7 @@ async function deleteBdg(id) {
   try {
     await deleteBudget(id);
     loadBudgets();
-  } catch (e) {
-    console.error('Erro ao excluir:', e.message);
-  }
+  } catch (e) { console.error('Erro ao excluir:', e.message); }
 }
 
 // Init
