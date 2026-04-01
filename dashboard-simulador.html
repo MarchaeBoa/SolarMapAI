@@ -251,12 +251,62 @@ select option {
 
 /* Map panel markers */
 .map-panel-marker {
-  cursor: grab !important; transition: filter 0.15s;
+  cursor: grab !important; transition: filter 0.15s; position: relative;
 }
 .map-panel-marker:hover { filter: brightness(1.3); z-index: 9999 !important; }
 .map-panel-marker.selected { filter: brightness(1.5) drop-shadow(0 0 8px rgba(31,216,164,0.6)); }
 
 .panel-svg { pointer-events: all; }
+
+/* Rotate handle for map panels */
+.map-rotate-handle {
+  position: absolute;
+  top: -22px; left: 50%; transform: translateX(-50%);
+  width: 20px; height: 20px;
+  background: radial-gradient(circle, #FFD96A, #D4A843);
+  border: 2px solid rgba(255,255,255,0.9);
+  border-radius: 50%;
+  cursor: grab;
+  display: none;
+  align-items: center; justify-content: center;
+  z-index: 10000;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.map-rotate-handle::after {
+  content: '↻';
+  font-size: 13px; font-weight: bold;
+  color: #0A1E35;
+  line-height: 1;
+}
+.map-rotate-handle:hover {
+  transform: translateX(-50%) scale(1.2);
+  box-shadow: 0 2px 12px rgba(212,168,67,0.7);
+}
+.map-rotate-handle.rotating {
+  cursor: grabbing;
+  background: radial-gradient(circle, #5AFAC8, #1FD8A4);
+  border-color: #fff;
+  box-shadow: 0 0 14px rgba(31,216,164,0.8);
+}
+.map-panel-marker.selected .map-rotate-handle {
+  display: flex;
+}
+.map-rotate-label {
+  position: absolute;
+  top: -38px; left: 50%; transform: translateX(-50%);
+  font-size: 10px; font-weight: 700;
+  color: #FFD96A;
+  background: rgba(6,12,20,0.85);
+  padding: 1px 6px; border-radius: 6px;
+  display: none;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 10001;
+}
+.map-panel-marker.selected .map-rotate-label {
+  display: block;
+}
 
 /* ══ MODE TABS ══ */
 .mode-tabs {
@@ -970,14 +1020,16 @@ function createMapPanel(latlng) {
         <line x1="0" y1="${h*0.33}" x2="${w}" y2="${h*0.33}" stroke="#1FD8A4" stroke-width="0.5" opacity="0.4"/>
         <line x1="0" y1="${h*0.66}" x2="${w}" y2="${h*0.66}" stroke="#1FD8A4" stroke-width="0.5" opacity="0.4"/>
       </svg>
+      <div class="map-rotate-label">${rot}°</div>
+      <div class="map-rotate-handle"></div>
     </div>
   `;
 
   const icon = L.divIcon({
     className: '',
     html: svgHtml,
-    iconSize: [w, h],
-    iconAnchor: [w/2, h/2]
+    iconSize: [w, h + 24],
+    iconAnchor: [w/2, h/2 + 12]
   });
 
   const marker = L.marker(latlng, {
@@ -992,7 +1044,7 @@ function createMapPanel(latlng) {
     selectMapPanel(marker);
   });
 
-  // Double-click to rotate 15°
+  // Double-click to rotate 15° (fallback)
   marker.on('dblclick', function(e) {
     L.DomEvent.stopPropagation(e);
     const el = marker.getElement().querySelector('.map-panel-marker');
@@ -1000,9 +1052,64 @@ function createMapPanel(latlng) {
     if (r >= 360) r -= 360;
     el.style.transform = 'rotate(' + r + 'deg)';
     el.dataset.rotation = r;
+    if (el.querySelector('.map-rotate-label')) el.querySelector('.map-rotate-label').textContent = r + '°';
     document.getElementById('ppRotation').value = r;
     document.getElementById('ppRotVal').textContent = r + '°';
   });
+
+  // --- Rotate handle drag logic ---
+  setTimeout(function() {
+    const el = marker.getElement();
+    if (!el) return;
+    const handle = el.querySelector('.map-rotate-handle');
+    const panelDiv = el.querySelector('.map-panel-marker');
+    const label = el.querySelector('.map-rotate-label');
+    if (!handle) return;
+
+    let isRotating = false;
+
+    function onRotateStart(e) {
+      e.stopPropagation();
+      e.preventDefault();
+      isRotating = true;
+      handle.classList.add('rotating');
+      marker.dragging.disable();
+      selectMapPanel(marker);
+    }
+
+    function onRotateMove(e) {
+      if (!isRotating) return;
+      e.preventDefault();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      const rect = panelDiv.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      let angle = Math.atan2(clientY - cy, clientX - cx) * (180 / Math.PI) + 90;
+      if (angle < 0) angle += 360;
+      angle = Math.round(angle);
+      panelDiv.style.transform = 'rotate(' + angle + 'deg)';
+      panelDiv.dataset.rotation = angle;
+      if (label) label.textContent = angle + '°';
+      document.getElementById('ppRotation').value = angle;
+      document.getElementById('ppRotVal').textContent = angle + '°';
+      ppRotation = angle;
+    }
+
+    function onRotateEnd() {
+      if (!isRotating) return;
+      isRotating = false;
+      handle.classList.remove('rotating');
+      marker.dragging.enable();
+    }
+
+    handle.addEventListener('mousedown', onRotateStart);
+    handle.addEventListener('touchstart', onRotateStart, { passive: false });
+    document.addEventListener('mousemove', onRotateMove);
+    document.addEventListener('touchmove', onRotateMove, { passive: false });
+    document.addEventListener('mouseup', onRotateEnd);
+    document.addEventListener('touchend', onRotateEnd);
+  }, 50);
 
   placedPanels.push(marker);
   updatePlacedCount();
@@ -1030,6 +1137,8 @@ function updateSelectedRotation(val) {
     const el = selectedPanel.getElement().querySelector('.map-panel-marker');
     el.style.transform = 'rotate(' + val + 'deg)';
     el.dataset.rotation = val;
+    const lbl = el.querySelector('.map-rotate-label');
+    if (lbl) lbl.textContent = val + '°';
   }
 }
 
