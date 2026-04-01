@@ -2557,6 +2557,7 @@ let photoImage = null;
 let placementMode = false;
 let panelSize = 60;
 let photoPanels = [];
+let photoRotation = 0;
 
 function handlePhotoUpload(e) {
   const file = e.target.files[0];
@@ -2623,7 +2624,8 @@ function createPanel3D(x, y) {
   panel.style.top = y + 'px';
   panel.style.width = panelSize + 'px';
   panel.style.height = (panelSize * 0.65) + 'px';
-  panel.dataset.rotation = '0';
+  panel.style.transform = 'rotate(' + photoRotation + 'deg)';
+  panel.dataset.rotation = photoRotation;
 
   panel.innerHTML = `
     <div class="panel-shadow"></div>
@@ -2679,6 +2681,7 @@ function createPanel3D(x, y) {
     panel.style.transform = 'rotate(' + angle + 'deg)';
     panel.dataset.rotation = angle;
     rotLabel.textContent = angle + '°';
+    photoRotation = angle;
   });
 
   document.addEventListener('mouseup', function() {
@@ -2722,6 +2725,7 @@ function createPanel3D(x, y) {
     panel.style.transform = 'rotate(' + angle + 'deg)';
     panel.dataset.rotation = angle;
     rotLabel.textContent = angle + '°';
+    photoRotation = angle;
   }, { passive: true });
   document.addEventListener('touchend', function() { isRotating = false; panel.classList.remove('rotating'); });
 
