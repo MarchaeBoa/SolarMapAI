@@ -213,37 +213,17 @@ if (urlParams.get('blocked') === '1') {
   } catch(e) {}
 })();
 
-// Subscribe to PRO
+// Subscribe to PRO — redirect to WhatsApp for payment
 async function assinarPro() {
-  const btn = document.getElementById('btnAssinar');
-  btn.innerHTML = '<span class="spinner"></span> Processando...';
-  btn.disabled = true;
-
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       window.location.href = 'login.html';
       return;
     }
-
-    // MVP: Update plan directly (replace with Stripe later)
-    const { error } = await supabase.from('profiles').update({
-      plan: 'pro',
-      pro_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-    }).eq('id', user.id);
-
-    if (error) throw error;
-
-    btn.innerHTML = '✓ Assinatura ativada!';
-    btn.style.background = 'linear-gradient(135deg, #5AFAC8, #1FD8A4)';
-
-    setTimeout(() => {
-      window.location.href = 'dashboard.html';
-    }, 1500);
+    window.open('https://wa.me/110920899493?text=Ol%C3%A1!%20Quero%20assinar%20o%20plano%20Profissional%20do%20SolarMap%20AI%20(R%24%2019%2C90%2Fm%C3%AAs).%20Meu%20email%3A%20' + encodeURIComponent(user.email), '_blank');
   } catch(e) {
-    btn.innerHTML = '☀️ Assinar Profissional — R$ 19,90/mês';
-    btn.disabled = false;
-    alert('Erro: ' + e.message);
+    window.location.href = 'login.html';
   }
 }
 </script>

@@ -9,15 +9,6 @@ async function authSignUp(email, password, fullName) {
     options: { data: { full_name: fullName } }
   });
   if (error) throw error;
-
-  // Create profile row
-  if (data.user) {
-    await supabase.from('profiles').insert({
-      id: data.user.id,
-      full_name: fullName,
-      email: email
-    });
-  }
   return data;
 }
 
