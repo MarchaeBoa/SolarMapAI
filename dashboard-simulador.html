@@ -2397,6 +2397,10 @@ function drawCreatePanel(x, y) {
     panel.style.transform = 'rotate(' + angle + 'deg)';
     panel.dataset.rotation = angle;
     rotLabel.textContent = angle + '°';
+    // Memorize rotation for next panel
+    drawPanelRotation = angle;
+    document.getElementById('dpRotation').value = angle;
+    document.getElementById('dpRotVal').textContent = angle + '°';
   });
   document.addEventListener('mouseup', function() {
     if (isRot) { isRot = false; panel.style.zIndex = 15; }
