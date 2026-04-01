@@ -7,6 +7,29 @@
 <link rel="stylesheet" href="css/shared.css">
 <link rel="stylesheet" href="css/dashboard.css">
 <link rel="stylesheet" href="css/solzinho.css">
+<style>
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,0.7); backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.modal-close {
+  position: absolute; top: 14px; right: 18px;
+  background: none; border: none; color: var(--muted); font-size: 1.8rem;
+  cursor: pointer; line-height: 1; transition: color 0.2s; z-index: 10;
+}
+.modal-close:hover { color: #ff6b6b; }
+.dash-input {
+  width: 100%; padding: 11px 14px; border-radius: 10px;
+  border: 1px solid rgba(238,244,255,0.12);
+  background: rgba(6,12,20,0.6); color: var(--ice);
+  font-size: 0.88rem; font-family: inherit; transition: 0.2s;
+}
+.dash-input:focus { border-color: var(--gold); outline: none; box-shadow: 0 0 0 2px rgba(212,168,67,0.15); }
+.dash-input::placeholder { color: rgba(238,244,255,0.3); }
+select.dash-input { cursor: pointer; }
+textarea.dash-input { resize: vertical; min-height: 70px; }
+</style>
 </head>
 <body>
 
@@ -96,8 +119,9 @@
 </div>
 
 <!-- Project Modal -->
-<div class="dash-modal" id="projectModal">
-  <div class="glass-card" style="max-width:640px;width:90%;max-height:90vh;overflow-y:auto;padding:32px;">
+<div class="modal-overlay" id="projectModal" style="display:none">
+  <div class="glass-card" style="max-width:640px;width:90%;max-height:90vh;overflow-y:auto;padding:32px;position:relative;">
+    <button class="modal-close" onclick="closeProjectModal()">&times;</button>
     <h2 id="modalTitle" style="margin-bottom:24px;">Novo Projeto</h2>
     <input type="hidden" id="projectId">
 
@@ -306,6 +330,11 @@ function closeProjectModal() {
   document.getElementById('projectModal').style.display = 'none';
 }
 
+// Close modal on overlay click
+document.getElementById('projectModal').addEventListener('click', function(e) {
+  if (e.target === this) closeProjectModal();
+});
+
 // Save project (create or update)
 async function saveProject() {
   const name = document.getElementById('projName').value.trim();
@@ -364,11 +393,6 @@ async function deleteProj(id) {
     alert('Erro ao excluir projeto: ' + e.message);
   }
 }
-
-// Close modal on backdrop click
-document.getElementById('projectModal').addEventListener('click', function(e) {
-  if (e.target === this) closeProjectModal();
-});
 
 // Load on init
 loadProjects();
