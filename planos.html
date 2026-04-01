@@ -213,7 +213,7 @@ if (urlParams.get('blocked') === '1') {
   } catch(e) {}
 })();
 
-// Subscribe to PRO — redirect to WhatsApp for payment
+// Subscribe to PRO — redirect to WhatsApp for payment (manual activation by admin)
 async function assinarPro() {
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -221,7 +221,25 @@ async function assinarPro() {
       window.location.href = 'login.html';
       return;
     }
+
+    // Open WhatsApp for payment
     window.open('https://wa.me/110920899493?text=Ol%C3%A1!%20Quero%20assinar%20o%20plano%20Profissional%20do%20SolarMap%20AI%20(R%24%2019%2C90%2Fm%C3%AAs).%20Meu%20email%3A%20' + encodeURIComponent(user.email), '_blank');
+
+    // Show feedback — plan is NOT auto-activated
+    const btn = document.getElementById('btnAssinar');
+    btn.textContent = '✅ Mensagem enviada! Aguarde a ativação';
+    btn.style.background = 'rgba(31,216,164,0.15)';
+    btn.style.color = '#5AFAC8';
+    btn.style.border = '1px solid rgba(31,216,164,0.3)';
+    btn.disabled = true;
+
+    // Show info alert
+    const alertEl = document.getElementById('planAlert');
+    alertEl.textContent = '📩 Sua solicitação foi enviada via WhatsApp! Após a confirmação do pagamento, seu plano será ativado manualmente em até 24h.';
+    alertEl.style.background = 'rgba(31,216,164,0.1)';
+    alertEl.style.borderColor = 'rgba(31,216,164,0.3)';
+    alertEl.style.color = '#5AFAC8';
+    alertEl.classList.add('visible');
   } catch(e) {
     window.location.href = 'login.html';
   }
